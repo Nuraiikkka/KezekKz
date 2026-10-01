@@ -3,13 +3,13 @@
 Booking + intake + live queue assistant for small and mid-size private clinics in Kazakhstan.
 Course project (IT Project Management, Group 1).
 
-**Stack:** Django 5 + Django REST Framework + PostgreSQL (backend) · React 19 + Vite + Tailwind + React Router + Axios (frontend) · GitHub Actions (CI)
+**Stack:** Django 5 + Django REST Framework + PostgreSQL (backend) · React 19 + Vite + Tailwind + React Router + Axios (frontend)
 
 ## Current scope (Sprint 2: 29 Sep – 12 Oct)
 
 | Area | Status |
 |---|---|
-| Repo, CI (GitHub Actions: tests + migrations check + lint + build) | done |
+| Repo | done |
 | DB schema: clinic, specialty, doctor, time slot, intake, patient, appointment | done |
 | Intake questionnaire (8 questions) + urgency/specialist routing suggestion | done |
 | Patient booking API + basic queue numbering, position & wait estimate | done |
@@ -79,7 +79,6 @@ frontend/src/
   pages/                  Home → Intake → Booking → Track
   components/             Layout + small UI kit
 docs/API.md               API contract
-.github/workflows/ci.yml  CI pipeline
 ```
 
 ## Team
