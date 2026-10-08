@@ -1,16 +1,13 @@
-# KezekKz - TSIS 3
+# KezekKz - TSIS 4
 
 Smart patient queue for clinics.
 
-## What we did in TSIS 3
+## What we did in TSIS 4
 
-- We chose our tech stack:
-  - backend: Django + Django REST Framework + PostgreSQL
-  - frontend: React + Vite + Tailwind
-- We made the repo and the folders for backend and frontend
-- We wrote the 8 questions for the patient (`backend/apps/intake/questionnaire.py`)
-- We wrote the first urgency rules (`backend/apps/intake/routing.py`) and small tests for them
-- CI/CD is not ready yet, it took more time to choose a tool than we thought
+- We finished CI with GitHub Actions. Now tests and build run on every push
+- We made the database models: Clinic, Specialty, Doctor, TimeSlot, Intake, Patient and Appointment
+- We added a command `seed_demo`. It adds a test clinic with 4 specialties, 5 doctors and free time slots
+- Margulan showed Nuray and Assiya how the database and API work, so not only one person knows it
 
 ## Folders
 
@@ -35,9 +32,12 @@ pip install -r requirements/dev.txt
 cp .env.example .env
 createdb kezek
 python manage.py migrate
-python manage.py test
+python manage.py seed_demo
+python manage.py createsuperuser
 python manage.py runserver
 ```
+
+You can see all the data in the admin page: http://localhost:8000/admin/
 
 Frontend (you need Node 20+):
 
