@@ -1,20 +1,53 @@
-# KezekKz
+# KezekKz - TSIS 3
 
-This is our group project for the IT Project Management course (Group 1).
+Smart patient queue for clinics.
 
-## What is KezekKz
+## What we did in TSIS 3
 
-In many clinics people sit in the hallway for hours and nobody knows how long they will wait.
-KezekKz is a small web app for clinics. The patient answers a few short questions, the app suggests
-which doctor to see and how urgent it is, and shows the wait time. So the patient can wait outside, not in the hallway.
+- We chose our tech stack:
+  - backend: Django + Django REST Framework + PostgreSQL
+  - frontend: React + Vite + Tailwind
+- We made the repo and the folders for backend and frontend
+- We wrote the 8 questions for the patient (`backend/apps/intake/questionnaire.py`)
+- We wrote the first urgency rules (`backend/apps/intake/routing.py`) and small tests for them
+- CI/CD is not ready yet, it took more time to choose a tool than we thought
 
-## What we did in TSIS 1-2
+## Folders
 
-- We chose the idea
-- We made the RACI matrix and the list of stakeholders
-- We wrote the idea list, the features list and 4 use cases
+```
+backend/
+  apps/          our django apps
+  settings/      base.py, conf.py, env/local.py, env/prod.py, urls.py
+  requirements/  base.txt, dev.txt, prod.txt
+  logs/
+frontend/        react app
+```
 
-There is no code yet, we start coding in the next TSIS :)
+## How to run
+
+Backend (you need Python 3.11+ and PostgreSQL):
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements/dev.txt
+cp .env.example .env
+createdb kezek
+python manage.py migrate
+python manage.py test
+python manage.py runserver
+```
+
+Frontend (you need Node 20+):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173
 
 ## Team
 
