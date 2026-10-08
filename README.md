@@ -1,19 +1,21 @@
-# KezekKz - TSIS 5
+# KezekKz - TSIS 6-7
 
 Smart patient queue for clinics.
 
-## What we did in TSIS 5
+## What we did in TSIS 6-7
 
-We wrote the project charter and started the real coding:
+- We wrote 10 user stories (US-01 ... US-10) with Given / When / Then scenarios
+- We made tests from the scenarios of Sprint 1 (US-01, US-02, US-03) - see `backend/apps/appointments/test_user_stories.py`
+- We changed the error messages so they are the same as in our stories ("This slot is not free anymore", "Phone number is required")
+- If the patient says "Not sure" about the doctor, the app chooses the doctor from the reason of the visit
+- The tracking page updates every 10 seconds and shows "No active appointment" if the link is wrong
 
-- API for the questions: the patient answers and gets a suggested doctor and urgency (routine, priority or urgent)
-- API for booking a time slot. Every booking gets a queue number, a position and a wait time
-- Staff API: login with a token, see the queue of a doctor, confirm urgency, change status
-- React pages: home, questions, booking and tracking
-- API documentation: http://localhost:8000/api/docs/
-- Tests for the API
+## What is next
 
-Important: the app only gives a suggestion. Staff always confirm the urgency. We don't save any diagnosis.
+| Sprint | Stories |
+|---|---|
+| 2 (13 - 26 Oct) | US-05 queue position, US-07 staff dashboard, US-04 staff confirms urgency, US-06 alert before the turn |
+| 3 (27 Oct - 9 Nov) | US-08 cancel, US-09 doctor is late, US-10 possible no-show |
 
 ## Folders
 
@@ -43,6 +45,8 @@ python manage.py runserver
 ```
 
 Run tests: `python manage.py test`
+
+API documentation: http://localhost:8000/api/docs/
 
 Frontend (you need Node 20+):
 

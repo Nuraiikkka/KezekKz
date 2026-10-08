@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 
 export default function Track() {
   const { token } = useParams()
   const [appointment, setAppointment] = useState(null)
+  const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -12,10 +13,16 @@ export default function Track() {
       api
         .get(`/appointments/${token}/`)
         .then((response) => setAppointment(response.data))
-        .catch((err) => setError(getErrorText(err)))
+        .catch((err) => {
+          if (err.response && err.response.status === 404) {
+            setNotFound(true)
+          } else {
+            setError(getErrorText(err))
+          }
+        })
     }
     load()
-    const timer = setInterval(load, 30000)
+    const timer = setInterval(load, 10000)
     return () => clearInterval(timer)
   }, [token])
 
@@ -25,6 +32,17 @@ export default function Track() {
       .post(`/appointments/${token}/cancel/`)
       .then((response) => setAppointment(response.data))
       .catch((err) => setError(getErrorText(err)))
+  }
+
+  if (notFound) {
+    return (
+      <p>
+        No active appointment.{' '}
+        <Link to="/" className="text-brand-600 underline">
+          Book a visit
+        </Link>
+      </p>
+    )
   }
 
   if (!appointment) {
@@ -68,7 +86,7 @@ export default function Track() {
 
       {error && <p className="mt-3 text-red-600">{error}</p>}
 
-      <p className="mt-4 text-xs text-slate-500">This page updates every 30 seconds. Save the link to come back.</p>
+      <p className="mt-4 text-xs text-slate-500">This page updates every 10 seconds. Save the link to come back.</p>
 
       {appointment.status === 'booked' && (
         <button onClick={cancel} className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-red-600">

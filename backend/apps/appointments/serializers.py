@@ -9,8 +9,8 @@ from .queue import get_queue_info, next_queue_number
 
 
 class PatientInputSerializer(serializers.Serializer):
-    full_name = serializers.CharField(max_length=200)
-    phone = serializers.CharField(max_length=20)
+    full_name = serializers.CharField(max_length=200, error_messages={"required": "Name is required."})
+    phone = serializers.CharField(max_length=20, error_messages={"required": "Phone number is required."})
 
     def validate_phone(self, value):
         phone = value.replace(" ", "").replace("-", "")
@@ -38,7 +38,7 @@ class BookingSerializer(serializers.Serializer):
         if slot is None:
             raise serializers.ValidationError({"slot_id": "Slot not found."})
         if slot.is_booked:
-            raise serializers.ValidationError({"slot_id": "This slot is already booked."})
+            raise serializers.ValidationError({"slot_id": "This slot is not free anymore."})
         if slot.start < timezone.now():
             raise serializers.ValidationError({"slot_id": "This slot is in the past."})
 
