@@ -1,13 +1,19 @@
-# KezekKz - TSIS 4
+# KezekKz - TSIS 5
 
 Smart patient queue for clinics.
 
-## What we did in TSIS 4
+## What we did in TSIS 5
 
-- We finished CI with GitHub Actions. Now tests and build run on every push
-- We made the database models: Clinic, Specialty, Doctor, TimeSlot, Intake, Patient and Appointment
-- We added a command `seed_demo`. It adds a test clinic with 4 specialties, 5 doctors and free time slots
-- Margulan showed Nuray and Assiya how the database and API work, so not only one person knows it
+We wrote the project charter and started the real coding:
+
+- API for the questions: the patient answers and gets a suggested doctor and urgency (routine, priority or urgent)
+- API for booking a time slot. Every booking gets a queue number, a position and a wait time
+- Staff API: login with a token, see the queue of a doctor, confirm urgency, change status
+- React pages: home, questions, booking and tracking
+- API documentation: http://localhost:8000/api/docs/
+- Tests for the API
+
+Important: the app only gives a suggestion. Staff always confirm the urgency. We don't save any diagnosis.
 
 ## Folders
 
@@ -33,11 +39,10 @@ cp .env.example .env
 createdb kezek
 python manage.py migrate
 python manage.py seed_demo
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
-You can see all the data in the admin page: http://localhost:8000/admin/
+Run tests: `python manage.py test`
 
 Frontend (you need Node 20+):
 
