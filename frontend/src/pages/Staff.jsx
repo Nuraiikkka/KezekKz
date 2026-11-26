@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { StatusBadge } from '../components/Badge.jsx'
@@ -182,8 +182,9 @@ function Dashboard({ onLogout }) {
       .catch((err) => setError(getErrorText(err)))
   }
 
-  const urgentCount = queue.filter((item) => item.urgency === 'urgent').length
-  const waits = queue.filter((item) => item.queue.wait_minutes !== null).map((item) => item.queue.wait_minutes)
+  const active = queue.filter((item) => item.status !== 'completed')
+  const urgentCount = active.filter((item) => item.urgency === 'urgent').length
+  const waits = active.filter((item) => item.queue.wait_minutes !== null).map((item) => item.queue.wait_minutes)
   const averageWait = waits.length ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : 0
 
   return (
@@ -194,7 +195,7 @@ function Dashboard({ onLogout }) {
 
       <div className="mt-4 grid grid-cols-3 gap-3">
         {[
-          [t('s.waiting'), queue.length],
+          [t('s.waiting'), active.length],
           [t('s.urgent'), urgentCount],
           [t('s.avg'), `${averageWait} ${t('t.min')}`],
         ].map(([label, value]) => (
@@ -256,8 +257,12 @@ function Dashboard({ onLogout }) {
       {queue.length === 0 && <p className="mt-4 text-slate-500">{t('s.empty')}</p>}
 
       <div className="mt-4 space-y-3">
-        {queue.map((item) => (
-          <div key={item.id} className="card">
+        {queue.map((item, index) => (
+          <Fragment key={item.id}>
+          {item.status === 'completed' && (index === 0 || queue[index - 1].status !== 'completed') && (
+            <h2 className="pt-2 text-lg font-semibold">{t('s.finished')}</h2>
+          )}
+          <div className="card">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="font-medium">
@@ -395,6 +400,7 @@ function Dashboard({ onLogout }) {
               </div>
             )}
           </div>
+        </Fragment>
         ))}
       </div>
     </div>

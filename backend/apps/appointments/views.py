@@ -479,7 +479,8 @@ class StaffQueueView(APIView):
         else:
             day = timezone.localdate()
 
-        appointments = get_queue(doctor, day)
+        finished = Appointment.objects.filter(doctor=doctor, slot__start__date=day, status="completed").order_by("slot__start")
+        appointments = list(get_queue(doctor, day)) + list(finished)
         return Response(StaffAppointmentSerializer(appointments, many=True).data)
 
 

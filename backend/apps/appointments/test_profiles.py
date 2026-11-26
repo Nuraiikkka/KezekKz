@@ -381,3 +381,26 @@ class BoardPrivacyTests(SmartFeaturesBase):
         self.assertTrue(row["sensitive"])
         self.assertEqual(row["doctor"], "")
         self.assertEqual(row["specialty"], "")
+
+
+class FinishedVisitInQueueTests(SmartFeaturesBase):
+    def test_completed_visit_stays_in_staff_queue_for_billing(self):
+        token = self.book(self.slots[0]).data["token"]
+        self.staff()
+        appointment = Appointment.objects.get(token=token)
+        self.client.patch(f"/api/staff/appointments/{appointment.id}/", {"status": "completed"}, format="json")
+        queue = self.client.get(f"/api/staff/queue/?doctor={self.doctor.id}").data
+        self.assertEqual([item["status"] for item in queue], ["completed"])
+        self.assertFalse(queue[0]["billed"])
+
+        self.client.patch(f"/api/staff/appointments/{appointment.id}/", {"status": "completed", "final_price": 9000}, format="json")
+        queue = self.client.get(f"/api/staff/queue/?doctor={self.doctor.id}").data
+        self.assertTrue(queue[0]["billed"])
+        self.assertEqual(queue[0]["price"], 9000)
+
+    def test_completed_visit_is_not_in_the_patient_queue_count(self):
+        first = self.book(self.slots[0]).data["token"]
+        second = self.book(self.slots[1], phone="+77011234568").data["token"]
+        Appointment.objects.filter(token=first).update(status="completed")
+        info = self.client.get(f"/api/appointments/{second}/").data["queue"]
+        self.assertEqual(info["people_ahead"], 0)
