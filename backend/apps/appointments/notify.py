@@ -47,3 +47,10 @@ def notify_receipt(appointment):
         payment = appointment.payment
         text = f"Спасибо за визит! Чек {payment.receipt_number}: {payment.amount} KZT."
         telegram.send_message(chat_id, text)
+
+
+def notify_bill(appointment):
+    chat_id = appointment.patient.telegram_chat_id
+    if chat_id and appointment.final_price is not None:
+        text = f"Приём завершён. К оплате: {appointment.final_price} KZT. Оплатите на странице визита: {telegram.track_link(appointment)}"
+        telegram.send_message(chat_id, text)

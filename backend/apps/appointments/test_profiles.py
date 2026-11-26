@@ -121,7 +121,8 @@ class StaffCardTests(SmartFeaturesBase):
 class PaymentAtCheckInTests(SmartFeaturesBase):
     def checked_in(self):
         token = self.book(self.slots[0]).data["token"]
-        Appointment.objects.filter(token=token).update(status="checked_in")
+        appointment = Appointment.objects.get(token=token)
+        Appointment.objects.filter(token=token).update(status="completed", final_price=appointment.doctor.specialty.price)
         return token, Appointment.objects.get(token=token)
 
     def test_patient_can_pay_after_check_in(self):
@@ -323,3 +324,47 @@ class LastVisitTests(SmartFeaturesBase):
         Appointment.objects.filter(token=token).update(status="cancelled")
         result = self.client.get("/api/patient/me/", HTTP_X_PATIENT_TOKEN=session.data["token"])
         self.assertIsNone(result.data["last_visit"])
+
+
+class DoctorSetsPriceTests(SmartFeaturesBase):
+    def setUp(self):
+        super().setUp()
+        self.token = self.book(self.slots[0]).data["token"]
+        self.appointment = Appointment.objects.get(token=self.token)
+
+    def test_no_payment_before_the_doctor_sets_the_price(self):
+        Appointment.objects.filter(token=self.token).update(status="completed")
+        result = self.client.post(f"/api/appointments/{self.token}/pay/", {"method": "kaspi"}, format="json")
+        self.assertEqual(result.status_code, 400)
+        self.assertFalse(self.client.get(f"/api/appointments/{self.token}/").data["billed"])
+
+    def test_checked_in_patient_cannot_pay_yet(self):
+        Appointment.objects.filter(token=self.token).update(status="checked_in")
+        result = self.client.post(f"/api/appointments/{self.token}/pay/", {"method": "kaspi"}, format="json")
+        self.assertEqual(result.status_code, 400)
+
+    def test_doctor_sets_price_after_the_visit_and_patient_pays_it(self):
+        self.staff()
+        result = self.client.patch(
+            f"/api/staff/appointments/{self.appointment.id}/", {"status": "completed", "final_price": 12500}, format="json"
+        )
+        self.assertEqual(result.status_code, 200)
+        self.assertTrue(result.data["billed"])
+        self.assertEqual(result.data["price"], 12500)
+
+        self.client.credentials()
+        paid = self.client.post(f"/api/appointments/{self.token}/pay/", {"method": "kaspi"}, format="json")
+        self.assertEqual(paid.status_code, 200)
+        self.assertEqual(paid.data["payment"]["amount"], 12500)
+
+    def test_price_cannot_be_set_before_the_visit_is_completed(self):
+        self.staff()
+        result = self.client.patch(f"/api/staff/appointments/{self.appointment.id}/", {"final_price": 9000}, format="json")
+        self.assertEqual(result.status_code, 400)
+
+    def test_price_cannot_be_negative(self):
+        self.staff()
+        result = self.client.patch(
+            f"/api/staff/appointments/{self.appointment.id}/", {"status": "completed", "final_price": -1}, format="json"
+        )
+        self.assertEqual(result.status_code, 400)

@@ -12,6 +12,29 @@ function authHeader() {
   return { headers: { Authorization: `Token ${localStorage.getItem('staffToken')}` } }
 }
 
+function BillForm({ item, onSet }) {
+  const { t } = useLang()
+  const [price, setPrice] = useState(String(item.price))
+  const valid = price !== '' && Number(price) >= 0
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-slate-600">{t('s.billprice')}:</span>
+      <input
+        type="number"
+        min="0"
+        step="500"
+        value={price}
+        onChange={(event) => setPrice(event.target.value)}
+        className="input w-32 py-1"
+      />
+      <button disabled={!valid} onClick={() => onSet(item.id, Number(price))} className="btn px-3 py-1 text-sm">
+        {t('s.billnow')}
+      </button>
+    </div>
+  )
+}
+
+
 function Login({ onLogin }) {
   const { t } = useLang()
   const [help, setHelp] = useState(false)
@@ -132,6 +155,10 @@ function Dashboard({ onLogout }) {
       .patch(`/staff/appointments/${id}/`, data, authHeader())
       .then(load)
       .catch((err) => setError(getErrorText(err)))
+  }
+
+  function setPrice(id, price) {
+    update(id, { status: 'completed', final_price: price })
   }
 
   function markPaid(id) {
@@ -320,10 +347,15 @@ function Dashboard({ onLogout }) {
             </div>
 
             {['checked_in', 'in_progress'].includes(item.status) && (
+              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{t('s.setprice')}</div>
+            )}
+
+            {item.status === 'completed' && (
               <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
-                {!item.payment && (
+                {!item.billed && <BillForm item={item} onSet={setPrice} />}
+                {item.billed && !item.payment && (
                   <p className="text-slate-600">
-                    {t('s.waitpay')} · {item.price.toLocaleString('ru-RU')} ₸
+                    {t('s.billed')}: {item.price.toLocaleString('ru-RU')} ₸ · {t('s.waitpay')}
                   </p>
                 )}
                 {item.payment && item.payment.status === 'paid' && (

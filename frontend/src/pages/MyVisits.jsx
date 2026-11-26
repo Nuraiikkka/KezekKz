@@ -39,7 +39,7 @@ function VisitCard({ item, rebook }) {
               ✓ {t('p.paidshort')}: {item.payment.amount === 0 ? t('p.free') : `${item.payment.amount.toLocaleString('ru-RU')} ₸`} ·{' '}
               {t('p.' + item.payment.method)}
             </span>
-          ) : ['checked_in', 'in_progress', 'completed'].includes(item.status) ? (
+          ) : item.status === 'completed' && item.billed ? (
             <>
               <span className="font-medium">
                 {t('p.topay')}: {item.price.toLocaleString('ru-RU')} ₸
@@ -48,9 +48,11 @@ function VisitCard({ item, rebook }) {
                 {t('p.payshort')}
               </Link>
             </>
+          ) : ['checked_in', 'in_progress', 'completed'].includes(item.status) ? (
+            <span className="text-slate-600">{t('p.doctorprice')}</span>
           ) : (
             <span className="text-slate-600">
-              {t('p.price')}: {item.price.toLocaleString('ru-RU')} ₸
+              {t('p.price')}: ≈ {item.price.toLocaleString('ru-RU')} ₸
             </span>
           )}
         </div>

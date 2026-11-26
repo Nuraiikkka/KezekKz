@@ -49,6 +49,7 @@ class Appointment(models.Model):
     notified_soon = models.BooleanField(default=False)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
+    final_price = models.IntegerField(null=True, blank=True)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -68,7 +69,7 @@ PAYMENT_METHODS = [
     ("insurance", "OSMS insurance"),
 ]
 
-PAYABLE_STATUSES = ["checked_in", "in_progress", "completed"]
+PAYABLE_STATUSES = ["completed"]
 
 RECORD_KINDS = [
     ("note", "Doctor's note"),

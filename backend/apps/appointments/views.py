@@ -15,7 +15,7 @@ from apps.clinics.models import Clinic, Doctor
 
 from .models import PAYABLE_STATUSES, Appointment, Patient, Payment, TelegramLogin
 from . import telegram
-from .notify import notify_queue, notify_receipt
+from .notify import notify_bill, notify_queue, notify_receipt
 from .payments import create_payment
 from .queue import get_queue, get_visit_minutes
 from .serializers import (
@@ -250,8 +250,8 @@ class AppointmentPayView(APIView):
     @extend_schema(request=PaySerializer, responses=AppointmentSerializer)
     def post(self, request, token):
         appointment = get_object_or_404(Appointment, token=token)
-        if appointment.status not in PAYABLE_STATUSES:
-            return Response({"status": ["You can pay after you are checked in."]}, status=400)
+        if appointment.status not in PAYABLE_STATUSES or appointment.final_price is None:
+            return Response({"status": ["You can pay after the doctor finishes the visit and sets the price."]}, status=400)
         if Payment.objects.filter(appointment=appointment).exists():
             return Response({"payment": ["This visit is already paid or waiting for payment."]}, status=400)
 
@@ -270,8 +270,8 @@ class StaffPayView(APIView):
     @extend_schema(request=StaffPaySerializer, responses=StaffAppointmentSerializer)
     def post(self, request, pk):
         appointment = get_object_or_404(Appointment, id=pk)
-        if appointment.status not in PAYABLE_STATUSES:
-            return Response({"status": ["The patient must be checked in first."]}, status=400)
+        if appointment.status not in PAYABLE_STATUSES or appointment.final_price is None:
+            return Response({"status": ["Finish the visit and set the price first."]}, status=400)
         if Payment.objects.filter(appointment=appointment).exists():
             return Response({"payment": ["This visit already has a payment."]}, status=400)
 
@@ -445,6 +445,12 @@ class StaffAppointmentUpdateView(APIView):
         appointment = get_object_or_404(Appointment, id=pk)
         serializer = StaffUpdateSerializer(appointment, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        new_status = serializer.validated_data.get("status", appointment.status)
+        new_price = serializer.validated_data.get("final_price")
+        if new_price is not None and new_status != "completed":
+            return Response({"final_price": ["Set the price after the visit is completed."]}, status=400)
+        if new_price is not None and Payment.objects.filter(appointment=appointment).exists():
+            return Response({"final_price": ["This visit is already paid."]}, status=400)
         appointment = serializer.save()
 
         now = timezone.now()
@@ -463,6 +469,9 @@ class StaffAppointmentUpdateView(APIView):
 
         if appointment.status in ["cancelled", "no_show"]:
             free_slot(appointment.slot)
+
+        if "final_price" in request.data and appointment.final_price is not None:
+            notify_bill(appointment)
 
         notify_queue(appointment.doctor, timezone.localtime(appointment.slot.start).date())
 

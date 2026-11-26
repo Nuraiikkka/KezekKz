@@ -106,7 +106,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
     slot_start = serializers.DateTimeField(source="slot.start")
     first_name = serializers.SerializerMethodField()
     queue = serializers.SerializerMethodField()
-    price = serializers.IntegerField(source="doctor.specialty.price")
+    price = serializers.SerializerMethodField()
+    billed = serializers.SerializerMethodField()
     payment = PaymentSerializer(read_only=True, allow_null=True)
     offer = serializers.SerializerMethodField()
     telegram_connected = serializers.SerializerMethodField()
@@ -125,6 +126,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient_confirmed",
             "wants_earlier",
             "price",
+            "billed",
             "payment",
             "offer",
             "telegram_connected",
@@ -140,6 +142,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "first_name",
             "queue",
         ]
+
+    def get_price(self, appointment) -> int:
+        if appointment.final_price is not None:
+            return appointment.final_price
+        return appointment.doctor.specialty.price
+
+    def get_billed(self, appointment) -> bool:
+        return appointment.final_price is not None
 
     def get_first_name(self, appointment) -> str:
         return appointment.patient.full_name.split()[0]
@@ -188,7 +198,8 @@ class StaffAppointmentSerializer(AppointmentSerializer):
 class StaffUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
-        fields = ["urgency", "urgency_confirmed", "status"]
+        fields = ["urgency", "urgency_confirmed", "status", "final_price"]
+        extra_kwargs = {"final_price": {"min_value": 0}}
 
 
 class RatingSerializer(serializers.Serializer):

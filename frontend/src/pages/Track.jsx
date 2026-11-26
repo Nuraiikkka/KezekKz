@@ -220,6 +220,7 @@ export default function Track() {
         </p>
         <p>
           <span className="text-slate-500">{t('p.priceshort')}:</span>{' '}
+          {appointment.billed ? '' : '≈ '}
           {appointment.price.toLocaleString('ru-RU')} ₸
           {appointment.payment && appointment.payment.status === 'paid' && (
             <span className="ml-2 text-brand-700">✓ {t('p.paidshort')}</span>
@@ -283,8 +284,9 @@ export default function Track() {
         </div>
       )}
 
-      {['checked_in', 'in_progress', 'completed'].includes(appointment.status) && (
-        <Pay appointment={appointment} onChange={setAppointment} />
+      {appointment.status === 'completed' && appointment.billed && <Pay appointment={appointment} onChange={setAppointment} />}
+      {['checked_in', 'in_progress', 'completed'].includes(appointment.status) && !appointment.billed && (
+        <div className="card mt-4 text-sm text-slate-600">{t('p.afterprice')}</div>
       )}
       {appointment.status === 'booked' && <p className="mt-4 text-center text-xs text-slate-500">{t('p.when')}</p>}
 

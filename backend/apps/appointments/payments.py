@@ -20,7 +20,7 @@ def make_receipt_number(appointment):
 
 
 def create_payment(appointment, method, card_number="", iin="", cashier=False):
-    price = appointment.doctor.specialty.price
+    price = appointment.final_price
     data = {"appointment": appointment, "method": method, "amount": price, "receipt_number": make_receipt_number(appointment)}
 
     if method == "card":

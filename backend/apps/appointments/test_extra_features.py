@@ -68,7 +68,8 @@ class WaitlistTests(SmartFeaturesBase):
 class PaymentTests(SmartFeaturesBase):
     def completed(self):
         token = self.book(self.slots[0]).data["token"]
-        Appointment.objects.filter(token=token).update(status="completed")
+        appointment = Appointment.objects.get(token=token)
+        Appointment.objects.filter(token=token).update(status="completed", final_price=appointment.doctor.specialty.price)
         return token
 
     def pay(self, token, **data):
