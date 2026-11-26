@@ -160,7 +160,7 @@ function Login({ onLogin }) {
       {bot && (
         <>
           <button type="button" onClick={telegram} disabled={waiting} className="btn w-full">
-            ✈ {t('my.tg')}
+            {t('my.tg')}
           </button>
           <p className="mt-2 text-xs text-slate-500">{waiting ? t('my.tgwait') : t('my.tgnote')}</p>
           {tg && (
@@ -210,7 +210,7 @@ function Login({ onLogin }) {
               <>
                 <p>{t('f.pinhelp_tg')}</p>
                 <button type="button" onClick={telegram} disabled={waiting} className="btn mt-2">
-                  ✈ {t('my.tg')}
+                  {t('my.tg')}
                 </button>
               </>
             ) : (

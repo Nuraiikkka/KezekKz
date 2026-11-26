@@ -431,7 +431,7 @@ class TelegramWebhookView(APIView):
         login.chat_id = chat_id
         login.save()
         keyboard = {
-            "keyboard": [[{"text": "📱 Поделиться номером", "request_contact": True}]],
+            "keyboard": [[{"text": "Поделиться номером", "request_contact": True}]],
             "resize_keyboard": True,
             "one_time_keyboard": True,
         }

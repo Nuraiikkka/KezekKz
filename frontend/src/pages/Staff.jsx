@@ -273,12 +273,12 @@ function Dashboard({ onLogout }) {
                   <div className="mt-1 flex flex-wrap gap-1 text-xs">
                     {['wheelchair', 'escort', 'interpreter'].filter((key) => item.needs[key]).map((key) => (
                       <span key={key} className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
-                        ♿ {t('need.' + key)}
+                        {t('need.' + key)}
                       </span>
                     ))}
                     {item.needs.language && (
                       <span className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
-                        🗣 {t('need.lang_' + item.needs.language)}
+                        {t('need.lang_' + item.needs.language)}
                       </span>
                     )}
                   </div>
@@ -306,7 +306,7 @@ function Dashboard({ onLogout }) {
                   )}
                   {item.intake_summary.conditions_text && (
                     <p className="text-amber-700">
-                      ⚠ {t('s.condition')}: {item.intake_summary.conditions_text}
+                      {t('s.condition')}: {item.intake_summary.conditions_text}
                     </p>
                   )}
                 </div>
@@ -360,7 +360,7 @@ function Dashboard({ onLogout }) {
                 </button>
               ))}
               <Link to={`/staff/patients/${item.patient_id}`} className="btn-light px-3 py-1 text-sm">
-                📋 {t('s.card')}
+                {t('s.card')}
               </Link>
             </div>
 

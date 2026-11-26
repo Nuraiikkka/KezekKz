@@ -45,7 +45,7 @@ export default function LeaveTime({ appointment }) {
 
   return (
     <div className="card mt-4 border-brand-200 bg-gradient-to-br from-brand-50 to-white">
-      <div className="text-xs font-medium uppercase tracking-wide text-brand-700">⏱ {t('leave.title')}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-brand-700">{t('leave.title')}</div>
       <div className="mt-1 text-3xl font-bold text-brand-700">
         {leaveNow ? t('leave.now') : `${t('leave.at')} ${new Date(leave).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })}`}
       </div>

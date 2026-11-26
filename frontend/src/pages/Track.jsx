@@ -252,7 +252,7 @@ export default function Track() {
             rel="noreferrer"
             className="btn-light mt-3"
           >
-            📍 {t('addr.open')}
+            {t('addr.open')}
           </a>
         </div>
       )}

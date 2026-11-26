@@ -83,7 +83,7 @@ export default function StaffPatient() {
         {message && <p className="mt-2 text-sm text-brand-700">{message}</p>}
         {profile.conditions && (
           <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-800">
-            ⚠ {t('s.condition')}: {profile.conditions}
+            {t('s.condition')}: {profile.conditions}
           </p>
         )}
       </div>

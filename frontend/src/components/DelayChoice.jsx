@@ -58,7 +58,7 @@ export default function DelayChoice({ appointment, token, onMoved }) {
   return (
     <div role="region" aria-label={t('delay.title')} className="card mt-4 border-amber-200 bg-amber-50">
       <p className="font-medium text-amber-900">
-        ⏱ {t('delay.title')}: {delay} {t('delay.min')}
+        {t('delay.title')}: {delay} {t('delay.min')}
       </p>
 
       {waiting && !mode ? (

@@ -107,12 +107,7 @@ export default function Home() {
         to="/board"
         className="card mt-3 flex items-center justify-between gap-3 text-slate-700 transition hover:bg-slate-50"
       >
-        <span className="flex items-center gap-3 font-medium">
-          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100">
-            📺
-          </span>
-          {t('home.board')}
-        </span>
+        <span className="font-medium">{t('home.board')}</span>
         <span aria-hidden="true" className="text-slate-400">→</span>
       </Link>
 

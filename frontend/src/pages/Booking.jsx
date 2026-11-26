@@ -196,7 +196,7 @@ export default function Booking() {
 
         {fast && (
           <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 p-3">
-            <div className="text-xs font-medium uppercase tracking-wide text-brand-700">⚡ {t('fast.title')}</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-brand-700">{t('fast.title')}</div>
             <div className="mt-1 flex items-center justify-between gap-3">
               <div className="text-sm">
                 <div className="font-medium">
