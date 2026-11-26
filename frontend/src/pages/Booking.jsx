@@ -74,7 +74,6 @@ export default function Booking() {
   })
   const currentDay = days.includes(day) ? day : days[0]
   const chosen = specialties.find((item) => item.code === specialtyCode)
-  const price = chosen ? chosen.price : null
 
   const visibleSlots = filtered.filter((slot) => dayKey(slot.start) === currentDay)
 
@@ -137,11 +136,7 @@ export default function Booking() {
             <li key={reason}>{reasonText(reason)}</li>
           ))}
         </ul>
-        {price !== null && (
-          <p className="mt-3 text-sm">
-            {t('p.price')}: <b>{price.toLocaleString('ru-RU')} ₸</b>
-          </p>
-        )}
+        <p className="mt-3 text-sm text-slate-600">{t('p.doctorprice')}</p>
         <p className="mt-2 text-xs text-slate-500">{t('b.only')}</p>
       </div>
 

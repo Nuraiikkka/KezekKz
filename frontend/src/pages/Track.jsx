@@ -220,8 +220,7 @@ export default function Track() {
         </p>
         <p>
           <span className="text-slate-500">{t('p.priceshort')}:</span>{' '}
-          {appointment.billed ? '' : '≈ '}
-          {appointment.price.toLocaleString('ru-RU')} ₸
+          {appointment.billed ? `${appointment.price.toLocaleString('ru-RU')} ₸` : t('p.doctorpriceshort')}
           {appointment.payment && appointment.payment.status === 'paid' && (
             <span className="ml-2 text-brand-700">✓ {t('p.paidshort')}</span>
           )}

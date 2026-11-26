@@ -48,12 +48,8 @@ function VisitCard({ item, rebook }) {
                 {t('p.payshort')}
               </Link>
             </>
-          ) : ['checked_in', 'in_progress', 'completed'].includes(item.status) ? (
-            <span className="text-slate-600">{t('p.doctorprice')}</span>
           ) : (
-            <span className="text-slate-600">
-              {t('p.price')}: ≈ {item.price.toLocaleString('ru-RU')} ₸
-            </span>
+            <span className="text-slate-600">{t('p.doctorprice')}</span>
           )}
         </div>
       )}
