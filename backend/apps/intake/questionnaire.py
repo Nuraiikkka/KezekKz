@@ -24,10 +24,9 @@ def options(codes):
 
 
 def build_questions(clinic=None):
-    specialties = []
+    specialties = [{"value": "not_sure", "label": "Not sure"}]
     if clinic is not None:
-        specialties = [{"value": item.code, "label": item.name} for item in clinic.specialties.all().order_by("id")]
-    specialties.append({"value": "not_sure", "label": "Not sure"})
+        specialties += [{"value": item.code, "label": item.name} for item in clinic.specialties.all().order_by("id")]
 
     return [
         {

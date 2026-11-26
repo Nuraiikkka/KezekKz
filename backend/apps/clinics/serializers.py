@@ -6,7 +6,7 @@ from .models import Clinic, Doctor, Specialty, TimeSlot
 class ClinicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clinic
-        fields = ["id", "name", "slug", "address"]
+        fields = ["id", "name", "slug", "address", "phone", "hours", "map_url"]
 
 
 class SpecialtySerializer(serializers.ModelSerializer):

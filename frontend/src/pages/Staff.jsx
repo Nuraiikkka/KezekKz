@@ -38,7 +38,6 @@ function BillForm({ item, onSet }) {
 function Login({ onLogin }) {
   const { t } = useLang()
   const [help, setHelp] = useState(false)
-  const adminUrl = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api').origin + '/admin/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -66,6 +65,7 @@ function Login({ onLogin }) {
       <h1 className="text-xl font-semibold">{t('s.login')}</h1>
       <input
         className="input"
+        aria-label={t('s.user')}
         placeholder={t('s.user')}
         value={username}
         onChange={(event) => setUsername(event.target.value)}
@@ -73,6 +73,7 @@ function Login({ onLogin }) {
       <input
         className="input"
         type="password"
+        aria-label={t('s.pass')}
         placeholder={t('s.pass')}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -85,9 +86,6 @@ function Login({ onLogin }) {
       {help && (
         <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
           <p>{t('f.staffhelp')}</p>
-          <a href={adminUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-brand-600 underline">
-            {t('f.admin')}
-          </a>
         </div>
       )}
     </form>

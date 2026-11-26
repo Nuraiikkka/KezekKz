@@ -368,3 +368,16 @@ class DoctorSetsPriceTests(SmartFeaturesBase):
             f"/api/staff/appointments/{self.appointment.id}/", {"status": "completed", "final_price": -1}, format="json"
         )
         self.assertEqual(result.status_code, 400)
+
+
+class BoardPrivacyTests(SmartFeaturesBase):
+    def test_sensitive_specialty_is_not_named_on_the_board(self):
+        from apps.clinics.models import Doctor, Specialty
+
+        specialty = Specialty.objects.create(clinic=self.clinic, code="proctologist", name="Proctologist")
+        Doctor.objects.create(clinic=self.clinic, specialty=specialty, full_name="Secret Name", room="303")
+        rows = self.client.get(f"/api/clinics/{self.clinic.slug}/board/").data
+        row = next(item for item in rows if item["room"] == "303")
+        self.assertTrue(row["sensitive"])
+        self.assertEqual(row["doctor"], "")
+        self.assertEqual(row["specialty"], "")

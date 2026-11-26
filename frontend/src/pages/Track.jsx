@@ -4,6 +4,7 @@ import api, { getErrorText } from '../api.js'
 import { StatusBadge, UrgencyBadge } from '../components/Badge.jsx'
 import BackLink from '../components/BackLink.jsx'
 import LeaveTime from '../components/LeaveTime.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import Pay from '../components/Pay.jsx'
 import PinCard from '../components/PinCard.jsx'
 import { useLang } from '../i18n.jsx'
@@ -130,14 +131,7 @@ export default function Track() {
   }
 
   if (notFound) {
-    return (
-      <p>
-        {t('t.none')}{' '}
-        <Link to="/" className="text-brand-600 underline">
-          {t('t.book')}
-        </Link>
-      </p>
-    )
+    return <EmptyState title={t('nf.visit')} text={t('nf.visittext')} to="/my" action={t('nf.mine')} />
   }
 
   if (!appointment) {

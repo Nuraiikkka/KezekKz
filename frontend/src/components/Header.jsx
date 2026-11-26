@@ -7,7 +7,7 @@ export default function Header() {
   const { lang, setLang, t } = useLang()
 
   function linkClass({ isActive }) {
-    return `whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm ${isActive ? 'bg-brand-100 font-medium text-brand-700' : 'text-slate-600 hover:bg-slate-100'}`
+    return `whitespace-nowrap inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-base ${isActive ? 'bg-brand-100 font-medium text-brand-700' : 'text-slate-600 hover:bg-slate-100'}`
   }
 
   return (
@@ -24,12 +24,13 @@ export default function Header() {
           <NavLink to="/my" className={linkClass}>
             {t('nav.visits')}
           </NavLink>
-          <div className="ml-2 flex overflow-hidden rounded-lg border border-slate-200 text-xs">
+          <div className="ml-2 flex overflow-hidden rounded-lg border border-slate-200">
             {LANGS.map((code) => (
               <button
                 key={code}
                 onClick={() => setLang(code)}
-                className={`px-2 py-1 uppercase ${lang === code ? 'bg-brand-600 text-white' : 'text-slate-600'}`}
+                aria-label={code}
+                className={`min-h-11 min-w-11 px-3 py-2 text-sm uppercase ${lang === code ? 'bg-brand-600 text-white' : 'text-slate-600'}`}
               >
                 {code}
               </button>

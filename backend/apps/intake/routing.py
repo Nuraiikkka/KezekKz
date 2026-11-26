@@ -49,4 +49,4 @@ def get_specialty(answers, codes):
 
 def need_emergency(answers):
     red_flags = answers.get("red_flags", [])
-    return "difficulty_breathing" in red_flags or "severe_bleeding" in red_flags
+    return any(flag in RED_FLAGS for flag in red_flags)

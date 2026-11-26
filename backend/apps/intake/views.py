@@ -13,7 +13,10 @@ from .serializers import IntakeInputSerializer, IntakeSerializer
 class QuestionListView(APIView):
     @extend_schema(responses=dict)
     def get(self, request):
-        clinic = Clinic.objects.filter(slug=request.query_params.get("clinic")).first()
+        slug = request.query_params.get("clinic")
+        clinic = Clinic.objects.filter(slug=slug).first()
+        if slug and clinic is None:
+            return Response({"detail": "Clinic not found."}, status=404)
         return Response(build_questions(clinic))
 
 

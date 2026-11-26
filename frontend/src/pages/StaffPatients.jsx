@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api.js'
 import BackLink from '../components/BackLink.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import { useLang } from '../i18n.jsx'
 
 export default function StaffPatients() {
@@ -19,11 +20,7 @@ export default function StaffPatients() {
   }, [query])
 
   if (denied) {
-    return (
-      <Link to="/staff" className="text-brand-600 underline">
-        {t('s.login')}
-      </Link>
-    )
+    return <EmptyState title={t('nf.staff')} text={t('nf.stafftext')} to="/staff" action={t('nf.stafflogin')} />
   }
 
   return (

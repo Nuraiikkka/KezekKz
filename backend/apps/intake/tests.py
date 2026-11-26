@@ -103,7 +103,18 @@ class IntakeApiTests(APITestCase):
     def test_questions_use_the_specialties_of_the_clinic(self):
         response = self.client.get("/api/intake/questions/?clinic=test")
         options = [item["value"] for item in response.data[1]["options"]]
-        self.assertEqual(options, ["general_practitioner", "cardiologist", "not_sure"])
+        self.assertEqual(options, ["not_sure", "general_practitioner", "cardiologist"])
+
+    def test_chest_pain_alone_shows_the_103_warning(self):
+        response = self.send(make_answers(red_flags=["chest_pain"]))
+        self.assertTrue(response.data["call_103"])
+
+    def test_no_red_flags_no_103_warning(self):
+        response = self.send(make_answers())
+        self.assertFalse(response.data["call_103"])
+
+    def test_unknown_clinic_has_no_questions(self):
+        self.assertEqual(self.client.get("/api/intake/questions/?clinic=nope").status_code, 404)
 
     def test_wrong_answers(self):
         answers = make_answers(pain_level=9, reason="nope")

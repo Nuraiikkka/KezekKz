@@ -112,6 +112,9 @@ class AppointmentArriveView(APIView):
         return Response(AppointmentSerializer(appointment).data)
 
 
+SENSITIVE_SPECIALTIES = ["proctologist", "gynecologist", "urologist"]
+
+
 class BoardView(APIView):
     @extend_schema(responses=dict)
     def get(self, request, slug):
@@ -123,10 +126,13 @@ class BoardView(APIView):
             queue = list(get_queue(doctor, today))
             serving = [item.queue_number for item in queue if item.status == "in_progress"]
             waiting = [item.queue_number for item in queue if item.status != "in_progress"]
+            sensitive = doctor.specialty.code in SENSITIVE_SPECIALTIES
             rows.append(
                 {
-                    "doctor": doctor.full_name,
-                    "specialty": doctor.specialty.name,
+                    "doctor": "" if sensitive else doctor.full_name,
+                    "specialty": "" if sensitive else doctor.specialty.name,
+                    "specialty_code": "" if sensitive else doctor.specialty.code,
+                    "sensitive": sensitive,
                     "room": doctor.room,
                     "delay_minutes": doctor.delay_minutes,
                     "now_serving": serving[0] if serving else None,

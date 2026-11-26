@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import BackLink from '../components/BackLink.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import { useLang } from '../i18n.jsx'
 
 export default function Stats() {
@@ -18,11 +19,7 @@ export default function Stats() {
   }, [days])
 
   if (error === '401') {
-    return (
-      <Link to="/staff" className="text-brand-600 underline">
-        {t('s.login')}
-      </Link>
-    )
+    return <EmptyState title={t('nf.staff')} text={t('nf.stafftext')} to="/staff" action={t('nf.stafflogin')} />
   }
   if (!data) return <p className="text-slate-500">{error || t('loading')}</p>
 

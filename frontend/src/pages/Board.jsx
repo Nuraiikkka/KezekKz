@@ -7,6 +7,7 @@ export default function Board() {
   const { t } = useLang()
   const [rows, setRows] = useState([])
   const [clinic, setClinic] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     api.get('/clinics/').then((response) => setClinic(response.data[0]))
@@ -22,6 +23,14 @@ export default function Board() {
     return () => clearInterval(timer)
   }, [clinic])
 
+  const specialties = []
+  rows.forEach((row) => {
+    if (row.specialty_code && !specialties.some(([code]) => code === row.specialty_code)) {
+      specialties.push([row.specialty_code, row.specialty])
+    }
+  })
+  const shown = filter === 'all' ? rows : rows.filter((row) => row.specialty_code === filter)
+
   return (
     <div>
       <BackLink to="/" />
@@ -30,11 +39,30 @@ export default function Board() {
         <span className="text-sm text-slate-500">{clinic ? clinic.name : ''}</span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {rows.map((row) => (
-          <div key={row.doctor} className="overflow-hidden rounded-2xl bg-brand-900 text-white shadow-lg">
-            <div className="flex items-center justify-between bg-brand-700 px-4 py-2 text-sm">
-              <span className="truncate">{row.doctor}</span>
+      <div className="mb-4 flex items-center gap-2">
+        <label htmlFor="board-filter" className="text-sm text-slate-600">
+          {t('board.filter')}
+        </label>
+        <select id="board-filter" className="input w-auto" value={filter} onChange={(event) => setFilter(event.target.value)}>
+          <option value="all">{t('board.allsp')}</option>
+          {specialties.map(([code, name]) => (
+            <option key={code} value={code}>
+              {t('sp.' + name, name)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {shown.map((row) => (
+          <div key={row.room} className="overflow-hidden rounded-2xl bg-brand-900 text-white shadow-lg">
+            <div className="flex items-center justify-between gap-2 bg-brand-700 px-4 py-2 text-sm">
+              <span className="min-w-0">
+                <span className="block truncate">{row.sensitive ? t('board.private') : row.doctor}</span>
+                {!row.sensitive && row.specialty && (
+                  <span className="block truncate text-xs text-brand-200">{t('sp.' + row.specialty, row.specialty)}</span>
+                )}
+              </span>
               <span className="rounded-md bg-white/20 px-2 py-0.5">
                 {t('t.room')} {row.room}
               </span>

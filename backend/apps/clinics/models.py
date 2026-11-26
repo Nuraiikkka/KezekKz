@@ -5,6 +5,9 @@ class Clinic(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     address = models.CharField(max_length=300, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    hours = models.CharField(max_length=120, blank=True)
+    map_url = models.URLField(max_length=300, blank=True)
 
     def __str__(self):
         return self.name

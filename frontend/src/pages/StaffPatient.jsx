@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { StatusBadge } from '../components/Badge.jsx'
 import BackLink from '../components/BackLink.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import { useLang } from '../i18n.jsx'
 
 const KINDS = ['note', 'analysis', 'prescription']
@@ -49,11 +50,7 @@ export default function StaffPatient() {
   }
 
   if (denied) {
-    return (
-      <Link to="/staff" className="text-brand-600 underline">
-        {t('s.login')}
-      </Link>
-    )
+    return <EmptyState title={t('nf.staff')} text={t('nf.stafftext')} to="/staff" action={t('nf.stafflogin')} />
   }
   if (!data) return <p className="text-slate-500">{t('loading')}</p>
 

@@ -1,10 +1,24 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { UrgencyBadge } from '../components/Badge.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import Steps from '../components/Steps.jsx'
 import { useLang } from '../i18n.jsx'
 import { addToken, getProfile, saveProfile } from '../visits.js'
+
+function savedIntake(slug) {
+  try {
+    return JSON.parse(sessionStorage.getItem('kezek-intake-' + slug))
+  } catch {
+    return null
+  }
+}
+
+function validPhone(value) {
+  const digits = value.replace(/[\s()-]/g, '')
+  return /^(\+7|8)\d{10}$/.test(digits)
+}
 
 function dayKey(date) {
   return new Date(date).toDateString()
@@ -14,7 +28,8 @@ export default function Booking() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { t, locale, reasonText } = useLang()
-  const intake = useLocation().state
+  const location = useLocation()
+  const intake = location.state || savedIntake(slug)
   const profile = getProfile()
 
   const [specialties, setSpecialties] = useState([])
@@ -26,7 +41,6 @@ export default function Booking() {
   const [name, setName] = useState(profile.name)
   const [phone, setPhone] = useState(profile.phone)
   const [error, setError] = useState('')
-  const [agreed, setAgreed] = useState(false)
   const [now] = useState(() => new Date())
   const [fast, setFast] = useState(null)
 
@@ -51,14 +65,7 @@ export default function Booking() {
   }, [slug, specialtyCode])
 
   if (!intake) {
-    return (
-      <p>
-        {t('b.first')}{' '}
-        <Link to={`/clinics/${slug}/questions`} className="text-brand-600 underline">
-          {t('b.go')}
-        </Link>
-      </p>
-    )
+    return <EmptyState title={t('nf.lost')} text={t('nf.losttext')} to={`/clinics/${slug}/questions`} action={t('nf.again')} />
   }
 
   const filtered = slots.filter((slot) => {
@@ -76,6 +83,9 @@ export default function Booking() {
   const chosen = specialties.find((item) => item.code === specialtyCode)
 
   const visibleSlots = filtered.filter((slot) => dayKey(slot.start) === currentDay)
+  const hasEarlier = !showAll && slots.length > 0 && filtered.length > 0 && new Date(slots[0].start) < new Date(filtered[0].start)
+  const nameOk = name.trim().length >= 2
+  const phoneOk = validPhone(phone)
 
   function dayName(key) {
     const date = new Date(key)
@@ -98,17 +108,19 @@ export default function Booking() {
   function book(event) {
     event.preventDefault()
     setError('')
+    if (!nameOk) return setError(t('b.badname'))
+    if (!phoneOk) return setError(t('b.badphone'))
     const data = {
       intake_id: intake.id,
       slot_id: slotId,
       specialty_code: specialtyCode,
-      patient: { full_name: name, phone: phone },
+      patient: { full_name: name.trim(), phone: phone.replace(/[\s()-]/g, '') },
     }
     api
       .post('/appointments/', data)
       .then((response) => {
         addToken(response.data.token)
-        saveProfile({ name, phone })
+        saveProfile({ name: name.trim(), phone })
         navigate(`/track/${response.data.token}`)
       })
       .catch((err) => setError(getErrorText(err)))
@@ -140,9 +152,11 @@ export default function Booking() {
         <p className="mt-2 text-xs text-slate-500">{t('b.only')}</p>
       </div>
 
-      <form onSubmit={book} className="card mt-4">
-        <label className="block text-sm font-medium">{t('b.specialist')}</label>
-        <select className="input mt-1" value={specialtyCode} onChange={(event) => changeSpecialty(event.target.value)}>
+      <form onSubmit={book}>
+      <div className="card mt-4">
+        <h2 className="mb-3 text-lg font-semibold">{t('b.sec_time')}</h2>
+        <label htmlFor="specialist" className="block text-sm font-medium">{t('b.specialist')}</label>
+        <select id="specialist" className="input mt-1" value={specialtyCode} onChange={(event) => changeSpecialty(event.target.value)}>
           {specialties.map((specialty) => (
             <option key={specialty.code} value={specialty.code}>
               {t('sp.' + specialty.name, specialty.name)}
@@ -192,6 +206,14 @@ export default function Booking() {
           </label>
         </div>
         {intake.earliest_slot && <p className="text-xs text-amber-700">{t('b.earliest')}</p>}
+        {hasEarlier && (
+          <p className="mt-2 text-xs text-amber-700">
+            {t('b.earlier')}{' '}
+            <button type="button" onClick={() => setShowAll(true)} className="underline">
+              {t('b.all')}
+            </button>
+          </p>
+        )}
 
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {days.map((key) => (
@@ -226,36 +248,36 @@ export default function Booking() {
           ))}
         </div>
         {visibleSlots.length === 0 && <p className="mt-2 text-sm text-slate-500">{t('b.none')}</p>}
+      </div>
 
-        <label className="mt-5 block text-sm font-medium">{t('b.name')}</label>
-        <input className="input mt-1" value={name} onChange={(event) => setName(event.target.value)} />
-
-        <label className="mt-3 block text-sm font-medium">{t('b.phone')}</label>
+      <div className="card mt-4">
+        <h2 className="mb-3 text-lg font-semibold">{t('b.sec_contact')}</h2>
+        <label htmlFor="patient-name" className="block text-sm font-medium">{t('b.name')}</label>
         <input
+          id="patient-name"
           className="input mt-1"
+          autoComplete="name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+
+        <label htmlFor="patient-phone" className="mt-3 block text-sm font-medium">{t('b.phone')}</label>
+        <input
+          id="patient-phone"
+          className="input mt-1"
+          type="tel"
+          autoComplete="tel"
           placeholder="+7 701 123 45 67"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
         />
 
-        <label className="mt-4 flex items-start gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            className="mt-1 accent-emerald-700"
-            checked={agreed}
-            onChange={(event) => setAgreed(event.target.checked)}
-          />
-          <span>
-            {t('b.consent')}
-            <span className="block text-xs text-slate-400">{t('b.privacy')}</span>
-          </span>
-        </label>
+        {error && <p role="alert" className="mt-3 text-red-600">{error}</p>}
 
-        {error && <p className="mt-3 text-red-600">{error}</p>}
-
-        <button disabled={!slotId || !agreed || !name || !phone} className="btn mt-5 w-full">
+        <button disabled={!slotId || !nameOk || !phoneOk} className="btn mt-5 w-full">
           {t('b.book')}
         </button>
+      </div>
       </form>
     </div>
   )

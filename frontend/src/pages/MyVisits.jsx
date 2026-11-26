@@ -89,6 +89,10 @@ function Login({ onLogin }) {
   function submit(event) {
     event.preventDefault()
     setError('')
+    if (!phone.trim() || !pin.trim() || (mode === 'register' && !name.trim())) {
+      setError(t('my.fill'))
+      return
+    }
     const request =
       mode === 'login'
         ? api.post('/patient/login/', { phone, pin })
@@ -178,14 +182,15 @@ function Login({ onLogin }) {
       <form onSubmit={submit}>
         <div className="grid gap-3 sm:grid-cols-2">
           {mode === 'register' && (
-            <input className="input sm:col-span-2" placeholder={t('my.name')} value={name} onChange={(event) => setName(event.target.value)} />
+            <input className="input sm:col-span-2" aria-label={t('my.name')} placeholder={t('my.name')} value={name} onChange={(event) => setName(event.target.value)} />
           )}
-          <input className="input" placeholder={t('my.phone')} value={phone} onChange={(event) => setPhone(event.target.value)} />
+          <input className="input" aria-label={t('my.phone')} placeholder={t('my.phone')} value={phone} onChange={(event) => setPhone(event.target.value)} />
           <input
             className="input"
             type="password"
             inputMode="numeric"
             maxLength={6}
+            aria-label={t('pin.ph')}
             placeholder={t('pin.ph')}
             value={pin}
             onChange={(event) => setPin(event.target.value)}
@@ -212,7 +217,7 @@ function Login({ onLogin }) {
             )}
           </div>
         )}
-        <p className="mt-2 text-xs text-slate-500">{mode === 'register' ? t('my.registerhint') : t('my.hint2')}</p>
+        {mode === 'register' && <p className="mt-2 text-xs text-slate-500">{t('my.registerhint')}</p>}
         {!bot && <p className="mt-1 text-xs text-slate-400">{t('my.safety')}</p>}
       </form>
     </div>
@@ -302,6 +307,7 @@ function Cabinet({ onLogout }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             className="input"
+            aria-label={t('my.name')}
             placeholder={t('my.name')}
             value={form.full_name}
             onChange={(event) => change({ ...form, full_name: event.target.value })}
@@ -338,6 +344,7 @@ function Cabinet({ onLogout }) {
             type="password"
             inputMode="numeric"
             maxLength={6}
+            aria-label={t('f.newpin')}
             placeholder={t('f.newpin')}
             value={newPin}
             onChange={(event) => setNewPin(event.target.value)}
@@ -428,6 +435,7 @@ function LocalVisits() {
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             className="input"
+            aria-label={t('b.name')}
             placeholder={t('b.name')}
             value={profile.name}
             onChange={(event) => change({ ...profile, name: event.target.value })}

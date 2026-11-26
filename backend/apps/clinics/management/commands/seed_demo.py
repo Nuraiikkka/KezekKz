@@ -23,21 +23,38 @@ SPECIALTIES = [
     ("orthopedist", "Orthopedist", 25, 12000),
 ]
 
+OLD_NAMES = {
+    "Айгерим Нурлановна": "Dr. Aigerim Nurlanovna",
+    "Ерлан Беков": "Dr. Yerlan Bekov",
+    "Дана Серикова": "Dr. Dana Serikova",
+    "Аскар Тулегенов": "Dr. Askar Tulegenov",
+    "Мадина Оспанова": "Dr. Madina Ospanova",
+    "Нурлан Сейткали": "Dr. Nurlan Seitkali",
+    "Алия Мухаметова": "Dr. Aliya Mukhametova",
+    "Тимур Абенов": "Dr. Timur Abenov",
+    "Сауле Каримова": "Dr. Saule Karimova",
+    "Гульнара Жунусова": "Dr. Gulnara Zhunusova",
+    "Бахыт Исмаилов": "Dr. Bakhyt Ismailov",
+    "Зарина Касымова": "Dr. Zarina Kassymova",
+    "Руслан Омаров": "Dr. Ruslan Omarov",
+    "Кайрат Досмаилов": "Dr. Kairat Dosmailov",
+}
+
 DOCTORS = [
-    ("general_practitioner", "Dr. Aigerim Nurlanovna", "101"),
-    ("general_practitioner", "Dr. Yerlan Bekov", "102"),
-    ("pediatrician", "Dr. Dana Serikova", "201"),
-    ("cardiologist", "Dr. Askar Tulegenov", "301"),
-    ("dermatologist", "Dr. Madina Ospanova", "302"),
-    ("proctologist", "Dr. Nurlan Seitkali", "303"),
-    ("neurologist", "Dr. Aliya Mukhametova", "304"),
-    ("ent", "Dr. Timur Abenov", "305"),
-    ("ophthalmologist", "Dr. Saule Karimova", "306"),
-    ("gynecologist", "Dr. Gulnara Zhunusova", "401"),
-    ("urologist", "Dr. Bakhyt Ismailov", "402"),
-    ("endocrinologist", "Dr. Zarina Kassymova", "403"),
-    ("gastroenterologist", "Dr. Ruslan Omarov", "404"),
-    ("orthopedist", "Dr. Kairat Dosmailov", "405"),
+    ("general_practitioner", "Айгерим Нурлановна", "101"),
+    ("general_practitioner", "Ерлан Беков", "102"),
+    ("pediatrician", "Дана Серикова", "201"),
+    ("cardiologist", "Аскар Тулегенов", "301"),
+    ("dermatologist", "Мадина Оспанова", "302"),
+    ("proctologist", "Нурлан Сейткали", "303"),
+    ("neurologist", "Алия Мухаметова", "304"),
+    ("ent", "Тимур Абенов", "305"),
+    ("ophthalmologist", "Сауле Каримова", "306"),
+    ("gynecologist", "Гульнара Жунусова", "401"),
+    ("urologist", "Бахыт Исмаилов", "402"),
+    ("endocrinologist", "Зарина Касымова", "403"),
+    ("gastroenterologist", "Руслан Омаров", "404"),
+    ("orthopedist", "Кайрат Досмаилов", "405"),
 ]
 
 
@@ -45,9 +62,15 @@ class Command(BaseCommand):
     help = "Add demo clinic, doctors and free slots"
 
     def handle(self, *args, **options):
-        clinic, _ = Clinic.objects.get_or_create(
+        clinic, _ = Clinic.objects.update_or_create(
             slug="pilot-clinic",
-            defaults={"name": "Pilot Clinic Almaty", "address": "Almaty, Abay Ave 10"},
+            defaults={
+                "name": "Клиника «Кезек»",
+                "address": "Алматы, пр. Абая, 10",
+                "phone": "+7 727 123 45 67",
+                "hours": "Пн–Сб 09:00–18:00, перерыв 13:00–14:00",
+                "map_url": "https://2gis.kz/almaty/search/Абая 10",
+            },
         )
 
         for code, name, minutes, price in SPECIALTIES:
@@ -58,6 +81,7 @@ class Command(BaseCommand):
         today = timezone.localdate()
         for code, full_name, room in DOCTORS:
             specialty = Specialty.objects.get(clinic=clinic, code=code)
+            Doctor.objects.filter(clinic=clinic, full_name=OLD_NAMES[full_name]).update(full_name=full_name)
             doctor, _ = Doctor.objects.get_or_create(
                 clinic=clinic, full_name=full_name, defaults={"specialty": specialty, "room": room}
             )
