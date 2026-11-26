@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from .models import Appointment, MedicalRecord, Patient, TelegramLogin
 from .serializers import (
     AppointmentSerializer,
+    FamilyMemberSerializer,
     LoginSerializer,
     MedicalRecordSerializer,
     NonceSerializer,
@@ -46,6 +47,7 @@ def card(patient, staff=False):
         "last_visit": last_visit(patient),
         "visits": serializer(visits, many=True).data,
         "records": MedicalRecordSerializer(patient.records.all(), many=True).data,
+        "family": FamilyMemberSerializer(patient.family.all(), many=True).data,
     }
 
 
@@ -53,6 +55,38 @@ def open_session(patient):
     patient.api_token = secrets.token_hex(24)
     patient.save()
     return {"token": patient.api_token, **card(patient)}
+
+
+class FamilyListView(APIView):
+    @extend_schema(responses=FamilyMemberSerializer(many=True))
+    def get(self, request):
+        patient = get_patient(request)
+        if patient is None:
+            return Response(status=401)
+        return Response(FamilyMemberSerializer(patient.family.all(), many=True).data)
+
+    @extend_schema(request=FamilyMemberSerializer, responses=FamilyMemberSerializer)
+    def post(self, request):
+        patient = get_patient(request)
+        if patient is None:
+            return Response(status=401)
+        if patient.family.count() >= 10:
+            return Response({"detail": ["You can add up to 10 family members."]}, status=400)
+        serializer = FamilyMemberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        member = serializer.save(patient=patient)
+        return Response(FamilyMemberSerializer(member).data, status=201)
+
+
+class FamilyDeleteView(APIView):
+    @extend_schema(responses=None)
+    def delete(self, request, pk):
+        patient = get_patient(request)
+        if patient is None:
+            return Response(status=401)
+        member = get_object_or_404(patient.family, id=pk)
+        member.delete()
+        return Response(status=204)
 
 
 class PatientSetPinView(APIView):

@@ -4,6 +4,7 @@ import api, { getErrorText } from '../api.js'
 import { StatusBadge, UrgencyBadge } from '../components/Badge.jsx'
 import BackLink from '../components/BackLink.jsx'
 import LeaveTime from '../components/LeaveTime.jsx'
+import DelayChoice from '../components/DelayChoice.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import Pay from '../components/Pay.jsx'
 import PinCard from '../components/PinCard.jsx'
@@ -209,6 +210,19 @@ export default function Track() {
         <p>
           <span className="text-slate-500">{t('t.room')}:</span> {appointment.room}
         </p>
+        {appointment.for_member && (
+          <p>
+            <span className="text-slate-500">{t('fam.visitfor')}:</span> {appointment.for_member.name} (
+            {t('rel.' + appointment.for_member.relation)}, {appointment.for_member.age} {t('fam.years')})
+          </p>
+        )}
+        {Object.keys(appointment.needs || {}).length > 0 && (
+          <p>
+            <span className="text-slate-500">{t('need.shown')}:</span>{' '}
+            {['wheelchair', 'escort', 'interpreter'].filter((key) => appointment.needs[key]).map((key) => t('need.' + key)).join(', ')}
+            {appointment.needs.language ? ` · ${t('need.language')}: ${t('need.lang_' + appointment.needs.language)}` : ''}
+          </p>
+        )}
         <p>
           <span className="text-slate-500">{t('t.time')}:</span> {new Date(appointment.slot_start).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
         </p>
@@ -282,6 +296,8 @@ export default function Track() {
         <div className="card mt-4 text-sm text-slate-600">{t('p.afterprice')}</div>
       )}
       {appointment.status === 'booked' && <p className="mt-4 text-center text-xs text-slate-500">{t('p.when')}</p>}
+
+      <DelayChoice appointment={appointment} token={token} onMoved={setAppointment} />
 
       {appointment.status !== 'cancelled' && <PinCard appointment={appointment} token={token} />}
 

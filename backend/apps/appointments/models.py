@@ -31,8 +31,32 @@ class Patient(models.Model):
         return self.full_name
 
 
+RELATIONS = [
+    ("child", "Child"),
+    ("parent", "Parent"),
+    ("spouse", "Spouse"),
+    ("other", "Other"),
+]
+
+
+class FamilyMember(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="family")
+    full_name = models.CharField(max_length=200)
+    birth_date = models.DateField()
+    relation = models.CharField(max_length=20, choices=RELATIONS, default="child")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.full_name
+
+
 class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.SET_NULL, null=True, blank=True, related_name="appointments")
+    needs = models.JSONField(default=dict, blank=True)
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="appointments")
     slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="appointments")
     intake = models.OneToOneField(Intake, on_delete=models.SET_NULL, null=True, blank=True)

@@ -261,8 +261,28 @@ function Dashboard({ onLogout }) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="font-medium">
-                  #{item.queue_number} {item.patient_name}
+                  #{item.queue_number} {item.for_member ? item.for_member.name : item.patient_name}
+                  {item.for_member && (
+                    <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
+                      {t('rel.' + item.for_member.relation)}, {item.for_member.age} {t('fam.years')}
+                    </span>
+                  )}
                 </div>
+                {item.for_member && <div className="text-xs text-slate-500">{t('s.contact', 'Контакт')}: {item.patient_name}</div>}
+                {Object.keys(item.needs || {}).length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1 text-xs">
+                    {['wheelchair', 'escort', 'interpreter'].filter((key) => item.needs[key]).map((key) => (
+                      <span key={key} className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
+                        ♿ {t('need.' + key)}
+                      </span>
+                    ))}
+                    {item.needs.language && (
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
+                        🗣 {t('need.lang_' + item.needs.language)}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="text-sm text-slate-500">
                   {item.patient_phone} · {new Date(item.slot_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                 </div>

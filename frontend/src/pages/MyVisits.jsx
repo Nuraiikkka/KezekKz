@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { StatusBadge } from '../components/Badge.jsx'
 import BackLink from '../components/BackLink.jsx'
+import FamilyCard from '../components/FamilyCard.jsx'
 import { useLang } from '../i18n.jsx'
 import { getProfile, getTokens, saveProfile } from '../visits.js'
 
@@ -335,6 +336,12 @@ function Cabinet({ onLogout }) {
           {saved ? `✓ ${t('v.saved')}` : t('my.save')}
         </button>
       </form>
+
+      <FamilyCard
+        family={data.family || []}
+        token={readToken()}
+        onChange={(family) => setData({ ...data, family })}
+      />
 
       <form onSubmit={changePin} className="card mt-4">
         <h2 className="mb-3 font-medium">{t('f.changepin')}</h2>

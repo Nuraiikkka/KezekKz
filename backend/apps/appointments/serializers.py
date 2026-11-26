@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.clinics.models import TimeSlot
 from apps.intake.models import Intake
 
-from .models import PAYMENT_METHODS, RECORD_KINDS, Appointment, MedicalRecord, Patient, Payment
+from .models import PAYMENT_METHODS, RECORD_KINDS, Appointment, FamilyMember, MedicalRecord, Patient, Payment
 from .payments import luhn_ok
 from .queue import get_no_show_risk, get_queue_info, next_queue_number
 
@@ -26,11 +26,45 @@ class PatientInputSerializer(serializers.Serializer):
         return normalize_phone(value)
 
 
+def age_of(birth_date):
+    today = timezone.localdate()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+
+class FamilyMemberSerializer(serializers.ModelSerializer):
+    age = serializers.SerializerMethodField()
+    birth_date = serializers.DateField()
+    full_name = serializers.CharField(max_length=200)
+
+    class Meta:
+        model = FamilyMember
+        fields = ["id", "full_name", "birth_date", "relation", "age"]
+
+    def get_age(self, member) -> int:
+        return age_of(member.birth_date)
+
+    def validate_birth_date(self, value):
+        if value > timezone.localdate():
+            raise serializers.ValidationError("The birth date cannot be in the future.")
+        if age_of(value) > 120:
+            raise serializers.ValidationError("Check the birth date.")
+        return value
+
+
+class NeedsSerializer(serializers.Serializer):
+    wheelchair = serializers.BooleanField(required=False, default=False)
+    escort = serializers.BooleanField(required=False, default=False)
+    interpreter = serializers.BooleanField(required=False, default=False)
+    language = serializers.ChoiceField(choices=["", "ru", "kk", "en"], required=False, allow_blank=True, default="")
+
+
 class BookingSerializer(serializers.Serializer):
     intake_id = serializers.IntegerField()
     slot_id = serializers.IntegerField()
     specialty_code = serializers.CharField(required=False)
     patient = PatientInputSerializer()
+    family_member_id = serializers.IntegerField(required=False, allow_null=True)
+    needs = NeedsSerializer(required=False)
 
     def validate(self, data):
         intake = Intake.objects.filter(id=data["intake_id"]).first()
@@ -50,6 +84,18 @@ class BookingSerializer(serializers.Serializer):
         code = data.get("specialty_code") or intake.specialty.code
         if slot.doctor.clinic != intake.clinic or slot.doctor.specialty.code != code:
             raise serializers.ValidationError({"slot_id": "This slot is for another specialist."})
+
+        member_id = data.get("family_member_id")
+        if member_id:
+            request = self.context.get("request")
+            token = request.headers.get("X-Patient-Token", "") if request else ""
+            owner = Patient.objects.filter(phone=data["patient"]["phone"]).first()
+            if not token or owner is None or owner.api_token != token:
+                raise serializers.ValidationError({"family_member_id": "Log in to book for a family member."})
+            member = owner.family.filter(id=member_id).first()
+            if member is None:
+                raise serializers.ValidationError({"family_member_id": "Family member not found."})
+            data["member"] = member
 
         data["intake"] = intake
         data["slot"] = slot
@@ -72,6 +118,8 @@ class BookingSerializer(serializers.Serializer):
             doctor=slot.doctor,
             slot=slot,
             intake=data["intake"],
+            family_member=data.get("member"),
+            needs={key: value for key, value in data.get("needs", {}).items() if value},
             urgency=data["intake"].urgency,
             queue_number=next_queue_number(slot.doctor, slot.start),
         )
@@ -108,6 +156,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
     queue = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     billed = serializers.SerializerMethodField()
+    doctor_delay = serializers.IntegerField(source="doctor.delay_minutes")
+    for_member = serializers.SerializerMethodField()
     payment = PaymentSerializer(read_only=True, allow_null=True)
     offer = serializers.SerializerMethodField()
     telegram_connected = serializers.SerializerMethodField()
@@ -127,6 +177,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "wants_earlier",
             "price",
             "billed",
+            "doctor_delay",
+            "for_member",
+            "needs",
             "payment",
             "offer",
             "telegram_connected",
@@ -142,6 +195,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "first_name",
             "queue",
         ]
+
+    def get_for_member(self, appointment) -> dict:
+        member = appointment.family_member
+        if member is None:
+            return None
+        return {"name": member.full_name, "relation": member.relation, "age": age_of(member.birth_date)}
 
     def get_price(self, appointment) -> int:
         if appointment.final_price is not None:
@@ -205,6 +264,10 @@ class StaffUpdateSerializer(serializers.ModelSerializer):
 class RatingSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value=1, max_value=5)
     comment = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class MoveSerializer(serializers.Serializer):
+    slot_id = serializers.IntegerField()
 
 
 class EarlierSerializer(serializers.Serializer):

@@ -11,17 +11,18 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.clinics.models import Clinic, Doctor
+from apps.clinics.models import Clinic, Doctor, TimeSlot
 
 from .models import PAYABLE_STATUSES, Appointment, Patient, Payment, TelegramLogin
 from . import telegram
 from .notify import notify_bill, notify_queue, notify_receipt
 from .payments import create_payment
-from .queue import get_queue, get_visit_minutes
+from .queue import get_queue, get_visit_minutes, next_queue_number
 from .serializers import (
     AppointmentSerializer,
     BookingSerializer,
     EarlierSerializer,
+    MoveSerializer,
     PaySerializer,
     RatingSerializer,
     StaffAppointmentSerializer,
@@ -37,7 +38,7 @@ class AppointmentCreateView(APIView):
 
     @extend_schema(request=BookingSerializer, responses=AppointmentSerializer)
     def post(self, request):
-        serializer = BookingSerializer(data=request.data)
+        serializer = BookingSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         appointment = serializer.save()
         return Response(AppointmentSerializer(appointment).data, status=201)
@@ -67,6 +68,45 @@ class AppointmentCancelView(APIView):
             release_offer(appointment)
         free_slot(appointment.slot)
         notify_queue(appointment.doctor, timezone.localtime(appointment.slot.start).date())
+        return Response(AppointmentSerializer(appointment).data)
+
+
+class AppointmentMoveView(APIView):
+    @extend_schema(request=MoveSerializer, responses=AppointmentSerializer)
+    def post(self, request, token):
+        appointment = get_object_or_404(Appointment, token=token)
+        if appointment.status != "booked":
+            return Response({"status": ["Only booked appointments can be moved."]}, status=400)
+
+        serializer = MoveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_slot = TimeSlot.objects.filter(id=serializer.validated_data["slot_id"]).first()
+        if new_slot is None:
+            return Response({"slot_id": ["Slot not found."]}, status=400)
+        if new_slot.id == appointment.slot_id:
+            return Response({"slot_id": ["This is your current time."]}, status=400)
+        if new_slot.is_booked or new_slot.start < timezone.now():
+            return Response({"slot_id": ["This slot is not free anymore."]}, status=400)
+        if new_slot.doctor.clinic_id != appointment.doctor.clinic_id or new_slot.doctor.specialty.code != appointment.doctor.specialty.code:
+            return Response({"slot_id": ["This slot is for another specialist."]}, status=400)
+
+        old_slot = appointment.slot
+        old_doctor = appointment.doctor
+        new_slot.is_booked = True
+        new_slot.save()
+        if appointment.offered_slot is not None:
+            release_offer(appointment)
+
+        appointment.doctor = new_slot.doctor
+        appointment.slot = new_slot
+        appointment.queue_number = next_queue_number(new_slot.doctor, new_slot.start)
+        appointment.wants_earlier = False
+        appointment.notified_soon = False
+        appointment.save()
+        free_slot(old_slot)
+
+        notify_queue(old_doctor, timezone.localtime(old_slot.start).date())
+        notify_queue(appointment.doctor, timezone.localtime(new_slot.start).date())
         return Response(AppointmentSerializer(appointment).data)
 
 

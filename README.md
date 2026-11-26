@@ -9,6 +9,9 @@ Smart patient queue and wait-time app for clinics in Kazakhstan. A patient answe
 - Booking with the fastest available doctor of the specialty
 - Live queue position, wait time and "when to leave home"
 - Waiting list: free earlier slots are offered when someone cancels
+- If the doctor is late, the patient chooses: wait, move the time or change the doctor
+- Family: book a child or a parent from one profile, the doctor sees the age
+- "I need help": wheelchair, escort, sign language interpreter, doctor's language; the clinic sees it in advance
 - Profile with PIN or Telegram login: visit history, doctor notes and test results
 - Payment after the visit: Kaspi, card, Apple Pay, Google Pay, cash, OSMS (demo, no real money)
 - Rating with a comment

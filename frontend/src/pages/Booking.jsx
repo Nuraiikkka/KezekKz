@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { UrgencyBadge } from '../components/Badge.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import NeedsForm from '../components/NeedsForm.jsx'
 import Steps from '../components/Steps.jsx'
 import { useLang } from '../i18n.jsx'
 import { addToken, getProfile, saveProfile } from '../visits.js'
@@ -12,6 +13,14 @@ function savedIntake(slug) {
     return JSON.parse(sessionStorage.getItem('kezek-intake-' + slug))
   } catch {
     return null
+  }
+}
+
+function patientToken() {
+  try {
+    return localStorage.getItem('patientToken') || ''
+  } catch {
+    return ''
   }
 }
 
@@ -43,10 +52,29 @@ export default function Booking() {
   const [error, setError] = useState('')
   const [now] = useState(() => new Date())
   const [fast, setFast] = useState(null)
+  const [family, setFamily] = useState([])
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [memberId, setMemberId] = useState('')
+  const [needs, setNeeds] = useState({})
 
   useEffect(() => {
     api.get(`/clinics/${slug}/specialties/`).then((response) => setSpecialties(response.data))
   }, [slug])
+
+  useEffect(() => {
+    const token = patientToken()
+    if (!token) return
+    api
+      .get('/patient/me/', { headers: { 'X-Patient-Token': token } })
+      .then((response) => {
+        setLoggedIn(true)
+        setFamily(response.data.family || [])
+        const { full_name: fullName, phone: ownPhone } = response.data.profile
+        setName((current) => current || fullName)
+        setPhone((current) => ownPhone || current)
+      })
+      .catch(() => setLoggedIn(false))
+  }, [])
 
   useEffect(() => {
     if (!specialtyCode) return
@@ -115,9 +143,11 @@ export default function Booking() {
       slot_id: slotId,
       specialty_code: specialtyCode,
       patient: { full_name: name.trim(), phone: phone.replace(/[\s()-]/g, '') },
+      needs,
     }
+    if (memberId) data.family_member_id = Number(memberId)
     api
-      .post('/appointments/', data)
+      .post('/appointments/', data, { headers: { 'X-Patient-Token': patientToken() } })
       .then((response) => {
         addToken(response.data.token)
         saveProfile({ name: name.trim(), phone })
@@ -249,6 +279,34 @@ export default function Booking() {
         </div>
         {visibleSlots.length === 0 && <p className="mt-2 text-sm text-slate-500">{t('b.none')}</p>}
       </div>
+
+      <div className="card mt-4">
+        <h2 className="mb-3 text-lg font-semibold">{t('fam.for')}</h2>
+        {loggedIn ? (
+          <select
+            aria-label={t('fam.for')}
+            className="input"
+            value={memberId}
+            onChange={(event) => setMemberId(event.target.value)}
+          >
+            <option value="">{t('fam.me')}</option>
+            {family.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.full_name} · {t('rel.' + member.relation)}, {member.age} {t('fam.years')}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-sm text-slate-600">
+            {t('fam.login')}{' '}
+            <Link to="/my" className="text-brand-700 underline">
+              {t('nav.visits')}
+            </Link>
+          </p>
+        )}
+      </div>
+
+      <NeedsForm value={needs} onChange={setNeeds} />
 
       <div className="card mt-4">
         <h2 className="mb-3 text-lg font-semibold">{t('b.sec_contact')}</h2>
