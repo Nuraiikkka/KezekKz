@@ -3,7 +3,7 @@ import { useState } from 'react'
 import api, { getErrorText } from '../api.js'
 import { useLang } from '../i18n.jsx'
 
-const METHODS = ['kaspi', 'card', 'insurance', 'cash']
+const METHODS = ['kaspi', 'card', 'apple_pay', 'google_pay', 'insurance', 'cash']
 
 function formatMoney(value) {
   return `${value.toLocaleString('ru-RU')} ₸`
@@ -79,8 +79,9 @@ export default function Pay({ appointment, onChange }) {
       <h2 className="font-medium">{t('p.title')}</h2>
       <div className="mt-1 text-2xl font-bold text-brand-700">{formatMoney(appointment.price)}</div>
       <p className="text-xs text-slate-500">{t('p.demo')}</p>
+      <p className="mt-1 text-sm text-slate-600">{t('p.showdoctor')}</p>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {METHODS.map((item) => (
           <button
             key={item}
@@ -98,10 +99,17 @@ export default function Pay({ appointment, onChange }) {
         {method === 'kaspi' && (
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <QRCodeSVG value={`kezekkz-demo-pay:${appointment.token}`} size={140} />
+              <QRCodeSVG value="https://kaspi.kz/qr" size={140} />
             </div>
             <p className="text-sm text-slate-500">{t('p.kaspihint')}</p>
+            <a href="https://kaspi.kz/qr" target="_blank" rel="noreferrer" className="btn-light">
+              {t('p.kaspilink')}
+            </a>
           </div>
+        )}
+
+        {(method === 'apple_pay' || method === 'google_pay') && (
+          <p className="rounded-xl bg-slate-50 p-3 text-center text-sm text-slate-600">{t('p.walletdemo')}</p>
         )}
 
         {method === 'card' && (
@@ -128,13 +136,13 @@ export default function Pay({ appointment, onChange }) {
           </div>
         )}
 
-        {method === 'cash' && <p className="text-sm text-slate-600">{t('p.cashhint')}</p>}
+        {method === 'cash' && <p className="text-sm text-slate-600">{t('p.cashhint2')}</p>}
       </div>
 
       {error && <p className="mt-3 text-red-600">{error}</p>}
 
       <button onClick={pay} className="btn mt-4 w-full">
-        {method === 'kaspi' ? t('p.kaspidone') : t('p.pay')}
+        {method === 'kaspi' ? t('p.kaspidone') : method === 'apple_pay' || method === 'google_pay' ? t('p.' + method) : t('p.pay')}
       </button>
     </div>
   )

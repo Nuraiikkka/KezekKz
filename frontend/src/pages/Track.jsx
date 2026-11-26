@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { StatusBadge, UrgencyBadge } from '../components/Badge.jsx'
+import BackLink from '../components/BackLink.jsx'
+import LeaveTime from '../components/LeaveTime.jsx'
 import Pay from '../components/Pay.jsx'
+import PinCard from '../components/PinCard.jsx'
 import { useLang } from '../i18n.jsx'
 import { addToken } from '../visits.js'
 
@@ -147,6 +150,7 @@ export default function Track() {
 
   return (
     <div>
+      <BackLink to="/my" />
       {almostTurn && (
         <div className="mb-4 rounded-2xl bg-amber-100 p-4 font-medium text-amber-900">
           {t('t.soon')} {appointment.room}.
@@ -215,10 +219,35 @@ export default function Track() {
           <span className="text-slate-500">{t('t.time')}:</span> {new Date(appointment.slot_start).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short', hour12: false })}
         </p>
         <p>
+          <span className="text-slate-500">{t('p.priceshort')}:</span>{' '}
+          {appointment.price.toLocaleString('ru-RU')} ₸
+          {appointment.payment && appointment.payment.status === 'paid' && (
+            <span className="ml-2 text-brand-700">✓ {t('p.paidshort')}</span>
+          )}
+        </p>
+        <p>
           <span className="text-slate-500">{t('b.urgency')}:</span> {t('urgency.' + appointment.urgency)} (
           {appointment.urgency_confirmed ? t('t.confirmed') : t('t.notconfirmed')})
         </p>
       </div>
+
+      <LeaveTime appointment={appointment} />
+
+      {['booked', 'checked_in'].includes(appointment.status) && (
+        <div className="card mt-4 text-sm">
+          <h2 className="mb-1 font-medium">{t('prep.title')}</h2>
+          <p className="text-slate-600">{t('prep.' + appointment.specialty_code, t('prep.generic'))}</p>
+          <p className="mt-1 text-slate-500">{t('prep.generic')}</p>
+          <a
+            href={`https://2gis.kz/search/${encodeURIComponent(appointment.clinic_address || appointment.clinic)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-light mt-3"
+          >
+            📍 {t('addr.open')}
+          </a>
+        </div>
+      )}
 
       {appointment.status === 'completed' && (
         <div className="card mt-4 text-center">
@@ -254,7 +283,12 @@ export default function Track() {
         </div>
       )}
 
-      {appointment.status === 'completed' && <Pay appointment={appointment} onChange={setAppointment} />}
+      {['checked_in', 'in_progress', 'completed'].includes(appointment.status) && (
+        <Pay appointment={appointment} onChange={setAppointment} />
+      )}
+      {appointment.status === 'booked' && <p className="mt-4 text-center text-xs text-slate-500">{t('p.when')}</p>}
+
+      {appointment.status !== 'cancelled' && <PinCard appointment={appointment} token={token} />}
 
       {appointment.offer && (
         <div className="card mt-4 border-brand-200 bg-brand-50">
