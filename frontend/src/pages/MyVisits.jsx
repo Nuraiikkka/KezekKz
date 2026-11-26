@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { Link } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { StatusBadge } from '../components/Badge.jsx'
@@ -81,6 +82,7 @@ function Login({ onLogin }) {
   const [bot, setBot] = useState('')
   const [waiting, setWaiting] = useState(false)
   const [forgot, setForgot] = useState(false)
+  const [tg, setTg] = useState(null)
 
   useEffect(() => {
     api.get('/config/').then((response) => setBot(response.data.telegram_bot || ''))
@@ -111,6 +113,7 @@ function Login({ onLogin }) {
     setError('')
     try {
       const started = await api.post('/patient/telegram/start/')
+      setTg(started.data)
       window.open(started.data.link, '_blank', 'noopener')
       setWaiting(true)
       for (let attempt = 0; attempt < 150; attempt += 1) {
@@ -127,6 +130,7 @@ function Login({ onLogin }) {
       setError(t('my.tgfail'))
     }
     setWaiting(false)
+    setTg(null)
   }
 
   return (
@@ -156,6 +160,19 @@ function Login({ onLogin }) {
             ✈ {t('my.tg')}
           </button>
           <p className="mt-2 text-xs text-slate-500">{waiting ? t('my.tgwait') : t('my.tgnote')}</p>
+          {tg && (
+            <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+              <a href={tg.link} target="_blank" rel="noreferrer" className="btn-light w-full">
+                {t('my.tgopen')}
+              </a>
+              <div className="mt-3 flex items-center gap-3">
+                <QRCodeSVG value={tg.link} size={96} />
+                <p className="text-xs text-slate-500">{t('my.tgqr')}</p>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">{t('my.tgmanual')}</p>
+              <code className="mt-1 block select-all rounded-lg bg-white px-2 py-1 text-xs">/start login_{tg.nonce}</code>
+            </div>
+          )}
           <div className="my-3 text-center text-xs text-slate-400">{t('my.or')}</div>
         </>
       )}
