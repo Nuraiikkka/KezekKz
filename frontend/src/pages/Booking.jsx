@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
 import { UrgencyBadge } from '../components/Badge.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import { FamilyForm } from '../components/FamilyCard.jsx'
 import NeedsForm from '../components/NeedsForm.jsx'
 import Steps from '../components/Steps.jsx'
 import { useLang } from '../i18n.jsx'
@@ -145,7 +146,7 @@ export default function Booking() {
       patient: { full_name: name.trim(), phone: phone.replace(/[\s()-]/g, '') },
       needs,
     }
-    if (memberId) data.family_member_id = Number(memberId)
+    if (memberId && memberId !== 'new') data.family_member_id = Number(memberId)
     api
       .post('/appointments/', data, { headers: { 'X-Patient-Token': patientToken() } })
       .then((response) => {
@@ -295,6 +296,7 @@ export default function Booking() {
                 {member.full_name} · {t('rel.' + member.relation)}, {member.age} {t('fam.years')}
               </option>
             ))}
+            <option value="new">+ {t('fam.addnew')}</option>
           </select>
         ) : (
           <p className="text-sm text-slate-600">
@@ -303,6 +305,17 @@ export default function Booking() {
               {t('nav.visits')}
             </Link>
           </p>
+        )}
+        {loggedIn && memberId === 'new' && (
+          <div className="mt-3 rounded-xl bg-slate-50 p-3">
+            <FamilyForm
+              token={patientToken()}
+              onAdded={(member) => {
+                setFamily((list) => [...list, member])
+                setMemberId(String(member.id))
+              }}
+            />
+          </div>
         )}
       </div>
 
@@ -332,7 +345,7 @@ export default function Booking() {
 
         {error && <p role="alert" className="mt-3 text-red-600">{error}</p>}
 
-        <button disabled={!slotId || !nameOk || !phoneOk} className="btn mt-5 w-full">
+        <button disabled={!slotId || !nameOk || !phoneOk || memberId === 'new'} className="btn mt-5 w-full">
           {t('b.book')}
         </button>
       </div>

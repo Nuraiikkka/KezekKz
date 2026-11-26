@@ -4,23 +4,65 @@ import { useLang } from '../i18n.jsx'
 
 const RELATIONS = ['child', 'parent', 'spouse', 'other']
 
-export default function FamilyCard({ family, token, onChange }) {
+export function FamilyForm({ token, onAdded }) {
   const { t } = useLang()
   const [form, setForm] = useState({ full_name: '', birth_date: '', relation: 'child' })
   const [error, setError] = useState('')
-  const header = { headers: { 'X-Patient-Token': token } }
 
   function add(event) {
     event.preventDefault()
+    event.stopPropagation()
     setError('')
     api
-      .post('/patient/family/', { ...form, full_name: form.full_name.trim() }, header)
+      .post('/patient/family/', { ...form, full_name: form.full_name.trim() }, { headers: { 'X-Patient-Token': token } })
       .then((response) => {
-        onChange([...family, response.data])
+        onAdded(response.data)
         setForm({ full_name: '', birth_date: '', relation: 'child' })
       })
       .catch((err) => setError(getErrorText(err)))
   }
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <input
+        className="input sm:col-span-2"
+        aria-label={t('fam.name')}
+        placeholder={t('fam.name')}
+        value={form.full_name}
+        onChange={(event) => setForm({ ...form, full_name: event.target.value })}
+      />
+      <label className="text-sm text-slate-600">
+        {t('fam.birth')}
+        <input
+          className="input mt-1"
+          type="date"
+          max={new Date().toISOString().slice(0, 10)}
+          value={form.birth_date}
+          onChange={(event) => setForm({ ...form, birth_date: event.target.value })}
+        />
+      </label>
+      <label className="text-sm text-slate-600">
+        {t('fam.relation')}
+        <select className="input mt-1" value={form.relation} onChange={(event) => setForm({ ...form, relation: event.target.value })}>
+          {RELATIONS.map((code) => (
+            <option key={code} value={code}>
+              {t('rel.' + code)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+      <button type="button" onClick={add} disabled={form.full_name.trim().length < 2 || !form.birth_date} className="btn sm:col-span-2">
+        {t('fam.add')}
+      </button>
+    </div>
+  )
+}
+
+export default function FamilyCard({ family, token, onChange }) {
+  const { t } = useLang()
+  const [error, setError] = useState('')
+  const header = { headers: { 'X-Patient-Token': token } }
 
   function remove(id) {
     api
@@ -50,40 +92,9 @@ export default function FamilyCard({ family, token, onChange }) {
           </li>
         ))}
       </ul>
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
 
-      <form onSubmit={add} className="grid gap-2 sm:grid-cols-2">
-        <input
-          className="input sm:col-span-2"
-          aria-label={t('fam.name')}
-          placeholder={t('fam.name')}
-          value={form.full_name}
-          onChange={(event) => setForm({ ...form, full_name: event.target.value })}
-        />
-        <label className="text-sm text-slate-600">
-          {t('fam.birth')}
-          <input
-            className="input mt-1"
-            type="date"
-            max={new Date().toISOString().slice(0, 10)}
-            value={form.birth_date}
-            onChange={(event) => setForm({ ...form, birth_date: event.target.value })}
-          />
-        </label>
-        <label className="text-sm text-slate-600">
-          {t('fam.relation')}
-          <select className="input mt-1" value={form.relation} onChange={(event) => setForm({ ...form, relation: event.target.value })}>
-            {RELATIONS.map((code) => (
-              <option key={code} value={code}>
-                {t('rel.' + code)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-        <button disabled={form.full_name.trim().length < 2 || !form.birth_date} className="btn sm:col-span-2">
-          {t('fam.add')}
-        </button>
-      </form>
+      <FamilyForm token={token} onAdded={(member) => onChange([...family, member])} />
     </div>
   )
 }
