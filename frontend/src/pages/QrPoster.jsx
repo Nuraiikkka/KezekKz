@@ -1,4 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
+import BackLink from '../components/BackLink.jsx'
 import { useLang } from '../i18n.jsx'
 
 export default function QrPoster() {
@@ -6,6 +7,9 @@ export default function QrPoster() {
 
   return (
     <div className="mx-auto max-w-md text-center">
+      <div className="text-left">
+        <BackLink to="/staff" />
+      </div>
       <div className="card py-8">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-2xl text-white">K</div>
         <h1 className="text-3xl font-bold text-brand-700">{t('qr.title')}</h1>

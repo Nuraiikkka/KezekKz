@@ -14,6 +14,8 @@ function authHeader() {
 
 function Login({ onLogin }) {
   const { t } = useLang()
+  const [help, setHelp] = useState(false)
+  const adminUrl = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api').origin + '/admin/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -24,9 +26,16 @@ function Login({ onLogin }) {
       .post('/auth/token/', { username, password })
       .then((response) => {
         localStorage.setItem('staffToken', response.data.token)
+        window.dispatchEvent(new Event('staff-auth'))
         onLogin()
       })
-      .catch(() => setError(t('s.wrong')))
+      .catch((err) => {
+        if (err.response && err.response.status === 400) {
+          setError(t('s.wrong'))
+        } else {
+          setError(getErrorText(err))
+        }
+      })
   }
 
   return (
@@ -47,6 +56,17 @@ function Login({ onLogin }) {
       />
       {error && <p className="text-red-600">{error}</p>}
       <button className="btn w-full">{t('s.in')}</button>
+      <button type="button" onClick={() => setHelp(!help)} className="w-full text-center text-sm text-slate-500 underline">
+        {t('f.staff')}
+      </button>
+      {help && (
+        <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+          <p>{t('f.staffhelp')}</p>
+          <a href={adminUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-brand-600 underline">
+            {t('f.admin')}
+          </a>
+        </div>
+      )}
     </form>
   )
 }
@@ -145,17 +165,6 @@ function Dashboard({ onLogout }) {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t('s.title')}</h1>
-        <div className="flex gap-4 text-sm">
-          <Link to="/qr" className="text-brand-600 underline">
-            {t('s.qr')}
-          </Link>
-          <Link to="/staff/stats" className="text-brand-600 underline">
-            {t('s.stats')}
-          </Link>
-          <button onClick={onLogout} className="text-slate-500 underline">
-            {t('s.out')}
-          </button>
-        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
@@ -233,6 +242,29 @@ function Dashboard({ onLogout }) {
                   {item.patient_phone} · {new Date(item.slot_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                 </div>
                 <div className="mt-1 text-sm text-slate-600">{item.reasons.map(reasonText).join(', ')}</div>
+                <div className="mt-1 space-y-0.5 text-sm text-slate-600">
+                  {item.intake_summary.reason_text && (
+                    <p>
+                      {t('s.reasonlabel')}: {item.intake_summary.reason_text}
+                    </p>
+                  )}
+                  {item.intake_summary.symptoms && (
+                    <p>
+                      {t('s.symptoms')}: {item.intake_summary.symptoms.map((code) => t('sym.' + code, code)).join(', ')}
+                      {item.intake_summary.symptoms_text ? `; ${item.intake_summary.symptoms_text}` : ''}
+                    </p>
+                  )}
+                  {!item.intake_summary.symptoms && item.intake_summary.symptoms_text && (
+                    <p>
+                      {t('s.symptoms')}: {item.intake_summary.symptoms_text}
+                    </p>
+                  )}
+                  {item.intake_summary.conditions_text && (
+                    <p className="text-amber-700">
+                      ⚠ {t('s.condition')}: {item.intake_summary.conditions_text}
+                    </p>
+                  )}
+                </div>
                 <div className="mt-1 text-xs">
                   {t('s.risk')}:{' '}
                   <span
@@ -282,7 +314,36 @@ function Dashboard({ onLogout }) {
                   {t('act.' + status)}
                 </button>
               ))}
+              <Link to={`/staff/patients/${item.patient_id}`} className="btn-light px-3 py-1 text-sm">
+                📋 {t('s.card')}
+              </Link>
             </div>
+
+            {['checked_in', 'in_progress'].includes(item.status) && (
+              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+                {!item.payment && (
+                  <p className="text-slate-600">
+                    {t('s.waitpay')} · {item.price.toLocaleString('ru-RU')} ₸
+                  </p>
+                )}
+                {item.payment && item.payment.status === 'paid' && (
+                  <p className="text-brand-700">
+                    ✓ {t('s.paidby')}: {t('p.' + item.payment.method)} · {item.payment.amount.toLocaleString('ru-RU')} ₸ ·{' '}
+                    {t('p.receipt')} № {item.payment.receipt_number}
+                  </p>
+                )}
+                {item.payment && item.payment.status !== 'paid' && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-amber-700">
+                      {t('p.pending')} · {item.payment.amount.toLocaleString('ru-RU')} ₸
+                    </span>
+                    <button onClick={() => markPaid(item.id)} className="btn px-3 py-1 text-sm">
+                      {t('s.takepay')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -295,11 +356,14 @@ export default function Staff() {
 
   const logout = useCallback(() => {
     localStorage.removeItem('staffToken')
+    window.dispatchEvent(new Event('staff-auth'))
     setLoggedIn(false)
   }, [])
 
   if (!loggedIn) {
-    return <Login onLogin={() => setLoggedIn(true)} />
+    return (
+      <Login onLogin={() => setLoggedIn(true)} />
+    )
   }
   return <Dashboard onLogout={logout} />
 }

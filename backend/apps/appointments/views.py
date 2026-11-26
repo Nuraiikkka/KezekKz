@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from apps.clinics.models import Clinic, Doctor
 
-from .models import Appointment, Payment
+from .models import PAYABLE_STATUSES, Appointment, Patient, Payment, TelegramLogin
 from . import telegram
 from .notify import notify_queue, notify_receipt
 from .payments import create_payment
@@ -25,6 +25,7 @@ from .serializers import (
     PaySerializer,
     RatingSerializer,
     StaffAppointmentSerializer,
+    StaffPaySerializer,
     StaffUpdateSerializer,
 )
 from .waitlist import accept_offer, expire_offers, free_slot, release_offer
@@ -249,8 +250,8 @@ class AppointmentPayView(APIView):
     @extend_schema(request=PaySerializer, responses=AppointmentSerializer)
     def post(self, request, token):
         appointment = get_object_or_404(Appointment, token=token)
-        if appointment.status != "completed":
-            return Response({"status": ["You can pay after the visit is completed."]}, status=400)
+        if appointment.status not in PAYABLE_STATUSES:
+            return Response({"status": ["You can pay after you are checked in."]}, status=400)
         if Payment.objects.filter(appointment=appointment).exists():
             return Response({"payment": ["This visit is already paid or waiting for payment."]}, status=400)
 
@@ -261,6 +262,26 @@ class AppointmentPayView(APIView):
         appointment.refresh_from_db()
         notify_receipt(appointment)
         return Response(AppointmentSerializer(appointment).data)
+
+
+class StaffPayView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(request=StaffPaySerializer, responses=StaffAppointmentSerializer)
+    def post(self, request, pk):
+        appointment = get_object_or_404(Appointment, id=pk)
+        if appointment.status not in PAYABLE_STATUSES:
+            return Response({"status": ["The patient must be checked in first."]}, status=400)
+        if Payment.objects.filter(appointment=appointment).exists():
+            return Response({"payment": ["This visit already has a payment."]}, status=400)
+
+        serializer = StaffPaySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        create_payment(appointment, data["method"], iin=data.get("iin", ""), cashier=True)
+        appointment.refresh_from_db()
+        notify_receipt(appointment)
+        return Response(StaffAppointmentSerializer(appointment).data)
 
 
 class StaffMarkPaidView(APIView):
@@ -332,8 +353,13 @@ class TelegramWebhookView(APIView):
         message = request.data.get("message") or {}
         text = message.get("text", "")
         chat_id = str((message.get("chat") or {}).get("id", ""))
+        contact = message.get("contact")
 
-        if text.startswith("/start") and chat_id:
+        if contact and chat_id:
+            self.finish_login(message, chat_id, contact)
+        elif text.startswith("/start login_") and chat_id:
+            self.ask_for_contact(chat_id, text.split("login_", 1)[1].strip())
+        elif text.startswith("/start") and chat_id:
             parts = text.split()
             appointment = None
             if len(parts) > 1:
@@ -350,6 +376,48 @@ class TelegramWebhookView(APIView):
                 reply = "Откройте свою запись на сайте и нажмите «Подключить Telegram»."
             telegram.send_message(chat_id, reply)
         return Response({"ok": True})
+
+    def ask_for_contact(self, chat_id, nonce):
+        login = TelegramLogin.objects.filter(nonce=nonce).first()
+        if login is None:
+            telegram.send_message(chat_id, "Ссылка устарела. Вернитесь на сайт и начните вход заново.")
+            return
+        login.chat_id = chat_id
+        login.save()
+        keyboard = {
+            "keyboard": [[{"text": "📱 Поделиться номером", "request_contact": True}]],
+            "resize_keyboard": True,
+            "one_time_keyboard": True,
+        }
+        telegram.send_message(chat_id, "Чтобы войти в профиль, поделитесь своим номером телефона кнопкой ниже.", keyboard)
+
+    def finish_login(self, message, chat_id, contact):
+        sender = (message.get("from") or {}).get("id")
+        if contact.get("user_id") != sender:
+            telegram.send_message(chat_id, "Нужно поделиться своим номером, а не чужим.")
+            return
+
+        digits = "".join(char for char in str(contact.get("phone_number", "")) if char.isdigit())
+        if len(digits) == 11 and digits.startswith("8"):
+            digits = "7" + digits[1:]
+        phone = "+" + digits
+        login = (
+            TelegramLogin.objects.filter(chat_id=chat_id, patient__isnull=True)
+            .filter(created_at__gte=timezone.now() - timedelta(minutes=10))
+            .order_by("-created_at")
+            .first()
+        )
+        if login is None or len(phone) != 12 or not phone.startswith("+7"):
+            telegram.send_message(chat_id, "Не получилось войти. Вернитесь на сайт и начните заново.")
+            return
+
+        name = f"{contact.get('first_name', '')} {contact.get('last_name', '')}".strip() or "Patient"
+        patient, created = Patient.objects.get_or_create(phone=phone, defaults={"full_name": name})
+        patient.telegram_chat_id = chat_id
+        patient.save()
+        login.patient = patient
+        login.save()
+        telegram.send_message(chat_id, "Готово! Вернитесь на сайт, вход выполнен.", {"remove_keyboard": True})
 
 
 class StaffQueueView(APIView):

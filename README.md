@@ -16,7 +16,14 @@ Smart patient queue for clinics.
 - Telegram messages (queue is near, doctor is late, receipt) - optional, needs a bot token
 - QR poster for the clinic door (`/qr`)
 - Rating with a comment and payment after the visit: Kaspi QR, bank card, cash at the reception, OSMS insurance (demo mode, no real money). Staff accepts cash and sees the revenue in analytics
+- 13 specialties (proctologist, neurologist, ENT, ...), symptoms that depend on the chosen specialist, a free text for other symptoms, "Other" reason with a text, yes/no for allergies with a text
+- Patient profile with a PIN (`/my`): visit history, last visit, allergies and conditions, doctor notes and test results
+- Patient card for the doctor (`/staff/patients`): history of visits, symptoms, allergies, notes and test results that the doctor adds
+- Payment starts when the doctor marks the patient as "Checked in": cash at the cashier, bank card, Kaspi (link), Apple Pay, Google Pay, OSMS (demo)
+- "When to leave home": the app counts the live queue and the travel time of the patient
+- Preparation hints for every specialty and a link to the clinic on the map
 - Three languages: Russian, Kazakh, English
+- The staff area is separate: it has its own header and is not linked from the patient site. Staff open `/staff` directly (the address is shared only with the clinic). Everything behind it needs a login
 - Staff (`/staff`): sees the live queue of a doctor, confirms or changes urgency, sets status, chooses the date, says that the doctor is late, sees counters (US-04, US-07, US-09)
 
 ## Folders

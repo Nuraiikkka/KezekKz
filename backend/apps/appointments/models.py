@@ -21,6 +21,10 @@ class Patient(models.Model):
     full_name = models.CharField(max_length=200)
     phone = models.CharField(max_length=20, unique=True)
     telegram_chat_id = models.CharField(max_length=40, blank=True, default="")
+    pin_hash = models.CharField(max_length=200, blank=True, default="")
+    api_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    birth_date = models.DateField(null=True, blank=True)
+    conditions = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -58,8 +62,18 @@ class Appointment(models.Model):
 PAYMENT_METHODS = [
     ("card", "Bank card"),
     ("kaspi", "Kaspi QR"),
-    ("cash", "Cash at reception"),
+    ("apple_pay", "Apple Pay"),
+    ("google_pay", "Google Pay"),
+    ("cash", "Cash at the cashier"),
     ("insurance", "OSMS insurance"),
+]
+
+PAYABLE_STATUSES = ["checked_in", "in_progress", "completed"]
+
+RECORD_KINDS = [
+    ("note", "Doctor's note"),
+    ("analysis", "Analysis result"),
+    ("prescription", "Prescription"),
 ]
 
 
@@ -75,3 +89,29 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.receipt_number} {self.method} {self.amount}"
+
+
+class MedicalRecord(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="records")
+    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, null=True, blank=True, related_name="records")
+    kind = models.CharField(max_length=20, choices=RECORD_KINDS, default="note")
+    title = models.CharField(max_length=200)
+    text = models.TextField(blank=True, default="")
+    author = models.CharField(max_length=100, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.patient} {self.title}"
+
+
+class TelegramLogin(models.Model):
+    nonce = models.CharField(max_length=40, unique=True)
+    chat_id = models.CharField(max_length=40, blank=True, default="")
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, related_name="telegram_logins")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.nonce

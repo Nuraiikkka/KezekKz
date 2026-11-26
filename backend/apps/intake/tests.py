@@ -17,6 +17,7 @@ def make_answers(**changes):
         "pain_level": 1,
         "red_flags": ["none"],
         "visit_type": "first",
+        "has_conditions": "no",
         "preferred_time": "no_preference",
     }
     answers.update(changes)
@@ -65,7 +66,7 @@ class IntakeApiTests(APITestCase):
     def test_get_questions(self):
         response = self.client.get("/api/intake/questions/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 8)
+        self.assertEqual(len(response.data), 9)
 
     def test_send_answers(self):
         response = self.send(make_answers(red_flags=["chest_pain"]))
@@ -73,11 +74,36 @@ class IntakeApiTests(APITestCase):
         self.assertEqual(response.data["specialty"]["code"], "cardiologist")
         self.assertEqual(response.data["urgency"], "urgent")
 
-    def test_allergies_are_not_saved(self):
-        response = self.send(make_answers(allergies_or_conditions="penicillin"))
+    def test_other_reason_needs_a_description(self):
+        response = self.send(make_answers(reason="other"))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("reason_text", response.data["answers"])
+
+        response = self.send(make_answers(reason="other", reason_text="Pain when I sit"))
+        self.assertEqual(response.status_code, 201)
+
+    def test_conditions_yes_needs_a_text(self):
+        response = self.send(make_answers(has_conditions="yes"))
+        self.assertEqual(response.status_code, 400)
+
+        response = self.send(make_answers(has_conditions="yes", conditions_text="Penicillin allergy"))
         self.assertEqual(response.status_code, 201)
         intake = Intake.objects.get(id=response.data["id"])
-        self.assertNotIn("allergies_or_conditions", intake.answers)
+        self.assertEqual(intake.answers["conditions_text"], "Penicillin allergy")
+
+    def test_symptoms_are_saved_with_a_note(self):
+        answers = make_answers(symptoms=["rectal_pain", "constipation"], symptoms_text="Since Monday")
+        response = self.send(answers)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Intake.objects.get(id=response.data["id"]).answers["symptoms"], ["rectal_pain", "constipation"])
+
+    def test_wrong_symptom(self):
+        self.assertEqual(self.send(make_answers(symptoms=["magic"])).status_code, 400)
+
+    def test_questions_use_the_specialties_of_the_clinic(self):
+        response = self.client.get("/api/intake/questions/?clinic=test")
+        options = [item["value"] for item in response.data[1]["options"]]
+        self.assertEqual(options, ["general_practitioner", "cardiologist", "not_sure"])
 
     def test_wrong_answers(self):
         answers = make_answers(pain_level=9, reason="nope")

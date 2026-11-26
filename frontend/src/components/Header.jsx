@@ -24,9 +24,6 @@ export default function Header() {
           <NavLink to="/my" className={linkClass}>
             {t('nav.visits')}
           </NavLink>
-          <NavLink to="/staff" className={linkClass}>
-            {t('nav.staff')}
-          </NavLink>
           <div className="ml-2 flex overflow-hidden rounded-lg border border-slate-200 text-xs">
             {LANGS.map((code) => (
               <button

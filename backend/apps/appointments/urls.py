@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import patient_views, views
 
 urlpatterns = [
     path("appointments/", views.AppointmentCreateView.as_view()),
@@ -20,6 +20,18 @@ urlpatterns = [
     path("clinics/<slug:slug>/recommend/", views.RecommendView.as_view()),
     path("config/", views.ConfigView.as_view()),
     path("telegram/webhook/<str:secret>/", views.TelegramWebhookView.as_view()),
+    path("staff/appointments/<int:pk>/pay/", views.StaffPayView.as_view()),
+    path("patient/pin/", patient_views.PatientSetPinView.as_view()),
+    path("patient/register/", patient_views.PatientRegisterView.as_view()),
+    path("patient/telegram/start/", patient_views.TelegramLoginStartView.as_view()),
+    path("patient/telegram/check/", patient_views.TelegramLoginCheckView.as_view()),
+    path("patient/login/", patient_views.PatientLoginView.as_view()),
+    path("patient/me/pin/", patient_views.PatientChangePinView.as_view()),
+    path("patient/me/", patient_views.PatientMeView.as_view()),
+    path("staff/patients/", patient_views.StaffPatientListView.as_view()),
+    path("staff/patients/<int:pk>/", patient_views.StaffPatientDetailView.as_view()),
+    path("staff/patients/<int:pk>/reset-pin/", patient_views.StaffResetPinView.as_view()),
+    path("staff/patients/<int:pk>/records/", patient_views.StaffRecordCreateView.as_view()),
     path("staff/queue/", views.StaffQueueView.as_view()),
     path("staff/appointments/<int:pk>/", views.StaffAppointmentUpdateView.as_view()),
 ]

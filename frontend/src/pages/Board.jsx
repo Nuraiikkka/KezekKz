@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api.js'
+import BackLink from '../components/BackLink.jsx'
 import { useLang } from '../i18n.jsx'
 
 export default function Board() {
@@ -23,6 +24,7 @@ export default function Board() {
 
   return (
     <div>
+      <BackLink to="/" />
       <div className="mb-4 flex items-end justify-between">
         <h1 className="text-2xl font-semibold">{t('board.title')}</h1>
         <span className="text-sm text-slate-500">{clinic ? clinic.name : ''}</span>

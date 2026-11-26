@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { getErrorText } from '../api.js'
+import BackLink from '../components/BackLink.jsx'
 import { useLang } from '../i18n.jsx'
 
 export default function Stats() {
@@ -39,6 +40,7 @@ export default function Stats() {
 
   return (
     <div>
+      <BackLink to="/staff" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t('st.title')}</h1>
         <Link to="/staff" className="text-sm text-slate-500 underline">

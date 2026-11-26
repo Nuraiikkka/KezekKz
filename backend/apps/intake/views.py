@@ -2,8 +2,10 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.clinics.models import Clinic
+
 from .models import Intake
-from .questionnaire import QUESTIONS
+from .questionnaire import build_questions
 from .routing import get_specialty, get_urgency
 from .serializers import IntakeInputSerializer, IntakeSerializer
 
@@ -11,7 +13,8 @@ from .serializers import IntakeInputSerializer, IntakeSerializer
 class QuestionListView(APIView):
     @extend_schema(responses=dict)
     def get(self, request):
-        return Response(QUESTIONS)
+        clinic = Clinic.objects.filter(slug=request.query_params.get("clinic")).first()
+        return Response(build_questions(clinic))
 
 
 class IntakeCreateView(APIView):
@@ -22,7 +25,6 @@ class IntakeCreateView(APIView):
 
         clinic = serializer.validated_data["clinic"]
         answers = serializer.validated_data["answers"]
-        answers.pop("allergies_or_conditions", None)
 
         codes = list(clinic.specialties.values_list("code", flat=True))
         if not codes:
