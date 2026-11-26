@@ -373,7 +373,7 @@ class TelegramWebhookView(APIView):
                 appointment.patient.save()
                 reply = f"Готово! Буду писать вам про очередь. Номер {appointment.queue_number}, кабинет {appointment.doctor.room}."
             else:
-                reply = "Откройте свою запись на сайте и нажмите «Подключить Telegram»."
+                reply = f"Здравствуйте! Это бот KezekKz. Чтобы войти в профиль или получать сообщения об очереди, откройте сайт {settings.FRONTEND_URL} и нажмите «Войти через Telegram» или «Подключить Telegram»."
             telegram.send_message(chat_id, reply)
         return Response({"ok": True})
 
