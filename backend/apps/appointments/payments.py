@@ -19,7 +19,7 @@ def make_receipt_number(appointment):
     return f"KZ-{timezone.localdate():%y%m%d}-{appointment.id:05d}"
 
 
-def create_payment(appointment, method, card_number="", iin=""):
+def create_payment(appointment, method, card_number="", iin="", cashier=False):
     price = appointment.doctor.specialty.price
     data = {"appointment": appointment, "method": method, "amount": price, "receipt_number": make_receipt_number(appointment)}
 
@@ -27,11 +27,14 @@ def create_payment(appointment, method, card_number="", iin=""):
         data["card_last4"] = card_number[-4:]
         data["status"] = "paid"
         data["paid_at"] = timezone.now()
-    elif method == "kaspi":
+    elif method in ["kaspi", "apple_pay", "google_pay"]:
         data["status"] = "paid"
         data["paid_at"] = timezone.now()
     elif method == "insurance":
         data["amount"] = 0
+        data["status"] = "paid"
+        data["paid_at"] = timezone.now()
+    elif cashier:
         data["status"] = "paid"
         data["paid_at"] = timezone.now()
     else:

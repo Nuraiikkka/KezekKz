@@ -1,4 +1,5 @@
 import dj_database_url
+from corsheaders.defaults import default_headers
 
 from settings.conf import *
 
@@ -89,6 +90,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+CORS_ALLOW_HEADERS = [*default_headers, "x-patient-token"]
 
 LOGGING = {
     "version": 1,
