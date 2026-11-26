@@ -1,45 +1,48 @@
 # KezekKz
 
-Smart patient queue for clinics.
+Smart patient queue and wait-time app for clinics in Kazakhstan. A patient answers a few questions, gets the right specialist and urgency, books a slot and follows the live queue. The clinic staff manage the queue, patients and payments in a separate area.
 
-## What the app can do
+## Features
 
-- Patient: answers 8 questions, gets a specialist and urgency, books a slot, sees queue position and wait time, gets an alert when the turn is near, can cancel (US-01 ... US-08)
-- Patient profile (`/my`): saved name and phone, list of all visits, rating of a finished visit
-- Smart wait time: the wait is counted from the real length of the last visits of the doctor, not from a fixed number
-- No-show risk (low / medium / high) for every patient and a button "I'm coming" that lowers the risk
-- Self check-in "I'm here" (60 minutes before the visit) and "Add to calendar"
-- Queue board for the waiting room (`/board`), shows only numbers, no names
-- Analytics for staff (`/staff/stats`): no-show rate, ratings, load by hour, visit time of every doctor
-- Fastest doctor: the app compares the doctors of one specialty and offers the one who can take you first
-- "Tell me if an earlier time is free": when someone cancels, the free time is offered to the waiting patient for 10 minutes
-- Telegram messages (queue is near, doctor is late, receipt) - optional, needs a bot token
-- QR poster for the clinic door (`/qr`)
-- Rating with a comment and payment after the visit: Kaspi QR, bank card, cash at the reception, OSMS insurance (demo mode, no real money). Staff accepts cash and sees the revenue in analytics
-- 13 specialties (proctologist, neurologist, ENT, ...), symptoms that depend on the chosen specialist, a free text for other symptoms, "Other" reason with a text, yes/no for allergies with a text
-- Patient profile with a PIN (`/my`): visit history, last visit, allergies and conditions, doctor notes and test results
-- Patient card for the doctor (`/staff/patients`): history of visits, symptoms, allergies, notes and test results that the doctor adds
-- Payment starts when the doctor marks the patient as "Checked in": cash at the cashier, bank card, Kaspi (link), Apple Pay, Google Pay, OSMS (demo)
-- "When to leave home": the app counts the live queue and the travel time of the patient
-- Preparation hints for every specialty and a link to the clinic on the map
-- Three languages: Russian, Kazakh, English
-- The staff area is separate: it has its own header and is not linked from the patient site. Staff open `/staff` directly (the address is shared only with the clinic). Everything behind it needs a login
-- Staff (`/staff`): sees the live queue of a doctor, confirms or changes urgency, sets status, chooses the date, says that the doctor is late, sees counters (US-04, US-07, US-09)
+**For patients**
+- Short questionnaire (reason, symptoms, pain, red flags, allergies) that picks the specialist and the urgency
+- Booking with the fastest available doctor of the specialty
+- Live queue position, wait time and "when to leave home"
+- Waiting list: free earlier slots are offered when someone cancels
+- Profile with PIN or Telegram login: visit history, doctor notes and test results
+- Payment after the visit: Kaspi, card, Apple Pay, Google Pay, cash, OSMS (demo, no real money)
+- Rating with a comment
+- Telegram notifications (optional)
+- Russian, Kazakh and English
 
-## Folders
+**For clinic staff** (separate area at `/staff`, login required)
+- Live queue of every doctor, urgency control, visit statuses, doctor delay
+- Patient cards with visit history, notes and test results
+- Cash payments and revenue
+- Analytics: no-shows, ratings, load by hour, visit time per doctor
+- Waiting room board (`/board`) and QR poster (`/qr`)
+
+## Tech stack
+
+- Backend: Django, Django REST Framework, PostgreSQL
+- Frontend: React, Vite, Tailwind CSS
+- CI: GitHub Actions
+- Deploy: Render (backend), Vercel (frontend)
+
+## Project structure
 
 ```
-backend/
-  apps/          our django apps
-  settings/      base.py, conf.py, env/local.py, env/prod.py, urls.py
-  requirements/  base.txt, dev.txt, prod.txt
-  logs/
-frontend/        react app
+backend/     Django API (apps, settings, requirements, tests)
+frontend/    React app
+render.yaml  Render deploy config
+.github/     CI workflow
 ```
 
-## How to run
+Branches: `main` has everything, `backend` and `frontend` have the two parts separately.
 
-Backend (you need Python 3.11+ and PostgreSQL):
+## Run locally
+
+Backend (Python 3.11+, PostgreSQL):
 
 ```bash
 cd backend
@@ -53,11 +56,9 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
-Run tests: `python manage.py test`
+Tests: `python manage.py test`. API docs: http://localhost:8000/api/docs/
 
-API documentation: http://localhost:8000/api/docs/
-
-Frontend (you need Node 20+):
+Frontend (Node 20+):
 
 ```bash
 cd frontend
@@ -65,20 +66,14 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173
+Open http://localhost:5173
 
 ## Deploy
 
-Backend on Render (free), frontend on Vercel (free).
-
-1. Push the code to GitHub.
-2. Render: New - Blueprint - choose this repo. It reads `render.yaml` and creates the database and the web service.
-3. In Render set `FRONTEND_URL` and `CSRF_TRUSTED_ORIGINS` to the Vercel address (for example `https://kezek.vercel.app`). `STAFF_PASSWORD` is generated by Render - read it in the Environment tab.
-4. Vercel: New Project - choose this repo - Root Directory `frontend`. Add the variable `VITE_API_URL` = `https://<your-render-name>.onrender.com/api`.
-5. Telegram (optional): create a bot in @BotFather, then in Render set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME` (without @). The webhook is set on every start.
-6. Open the Vercel address. Staff login: `/staff`, user `reception`.
-
-Every start of the backend runs `migrate` and `seed_demo`, so the free slots for the next 7 days are always there.
+1. Render: New - Blueprint - choose this repo (reads `render.yaml`).
+2. In Render set `FRONTEND_URL` and `CSRF_TRUSTED_ORIGINS` to the Vercel address.
+3. Vercel: Root Directory `frontend`, variable `VITE_API_URL` = `https://<render-name>.onrender.com/api`.
+4. Optional Telegram: set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME` in Render.
 
 ## Team
 
